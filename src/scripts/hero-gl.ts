@@ -358,7 +358,10 @@ function run(
 
   svg.after(canvas);
   const coarse = matchMedia('(pointer: coarse)').matches;
-  let cap = coarse ? 1.5 : 2; // DPR clamp; lowered if frames run slow
+  // Pixel density: phones render at their full density (up to 3; at 1.5 the metal was half the screen's
+  // resolution), desktops stop at 2. Slow frames step it down a quarter at a time, never below 1.
+  const dpr = Math.min(devicePixelRatio || 1, 3);
+  let cap = coarse ? dpr : Math.min(dpr, 2);
   let px = 1,
     W = 1,
     H = 1,
@@ -384,6 +387,29 @@ function run(
 
   // the pointer, in canvas pixels (y up), and the tilt and lamp it drives
   const m = { x: -1e5, y: -1e5, tx: -1e5, ty: -1e5, tiltX: 0, tiltY: 0, ttx: 0, tty: 0, glint: 0, tglint: 0 };
+  const clamp = (v: number): number => Math.max(-1, Math.min(1, v));
+  // Touch screens have no hover, so there the light moves on its own: the lamp circles the eye and the
+  // reflections sway. The phone's tilt steers both where the browser shares it without a prompt (Android;
+  // iOS asks for permission, so it keeps the sway), and a finger on the mark holds the lamp under it.
+  const touch = { active: false, until: 0, gyro: false, gx: 0, gy: 0, ref: null as [number, number] | null };
+  const onTilt = (e: DeviceOrientationEvent): void => {
+    if (e.beta == null || e.gamma == null) return;
+    const a = (((screen.orientation?.angle ?? 0) % 360) + 360) % 360;
+    // device axes to screen axes: x is left-right on screen, y is toward-away
+    let x = e.gamma,
+      y = e.beta;
+    if (a === 90) [x, y] = [e.beta, -e.gamma];
+    else if (a === 270) [x, y] = [-e.beta, e.gamma];
+    if (!touch.ref) touch.ref = [x, y];
+    // relative to how the phone is held; the reference follows slowly, so any resting pose becomes neutral
+    touch.ref[0] += (x - touch.ref[0]) * 0.006;
+    touch.ref[1] += (y - touch.ref[1]) * 0.006;
+    touch.gx = clamp((x - touch.ref[0]) / 14);
+    touch.gy = clamp((y - touch.ref[1]) / 14);
+    touch.gyro = true;
+  };
+  const askless = typeof (DeviceOrientationEvent as unknown as { requestPermission?: unknown }).requestPermission !== 'function';
+  if (coarse && 'DeviceOrientationEvent' in window && askless) addEventListener('deviceorientation', onTilt, { passive: true });
   const toCanvas = (e: PointerEvent): [number, number, DOMRect] => {
     const r = canvas.getBoundingClientRect();
     return [(e.clientX - r.left) * (W / r.width), H - (e.clientY - r.top) * (H / r.height), r];
@@ -392,7 +418,10 @@ function run(
     const [x, y, r] = toCanvas(e);
     m.ttx = Math.max(-1, Math.min(1, (e.clientX - (r.left + r.width / 2)) / (innerWidth * 0.45)));
     m.tty = Math.max(-1, Math.min(1, -(e.clientY - (r.top + r.height / 2)) / (innerHeight * 0.45)));
-    if (e.pointerType !== 'mouse') return;
+    if (e.pointerType !== 'mouse') {
+      if (touch.active) [m.tx, m.ty] = [x, y]; // the lamp follows the finger until the page starts to scroll
+      return;
+    }
     m.tx = x;
     m.ty = y;
     if (m.x < -1e4) {
@@ -402,15 +431,19 @@ function run(
     const inside = e.clientX > r.left && e.clientX < r.right && e.clientY > r.top && e.clientY < r.bottom;
     m.tglint = inside ? 1 : 0.35;
   };
-  // touch: a tap on the mark holds the lamp there for a moment
+  // touch: a finger on the mark holds the lamp under it, and for a moment after it lifts
   const onDown = (e: PointerEvent): void => {
     if (e.pointerType === 'mouse') return;
     const [x, y, r] = toCanvas(e);
     if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
-    m.tx = m.x = x;
-    m.ty = m.y = y;
-    m.tglint = 1;
-    setTimeout(() => (m.tglint = 0), 1200);
+    m.tx = x;
+    m.ty = y;
+    touch.active = true;
+  };
+  const onUp = (e: PointerEvent): void => {
+    if (e.pointerType === 'mouse' || !touch.active) return;
+    touch.active = false;
+    touch.until = performance.now() + 1500;
   };
   const onLeave = (): void => {
     m.ttx = m.tty = 0;
@@ -418,6 +451,8 @@ function run(
   };
   addEventListener('pointermove', onMove, { passive: true });
   addEventListener('pointerdown', onDown, { passive: true });
+  addEventListener('pointerup', onUp, { passive: true });
+  addEventListener('pointercancel', onUp, { passive: true });
   document.documentElement.addEventListener('pointerleave', onLeave);
 
   // The pour starts on the first frame the mark is actually on screen.
@@ -436,23 +471,37 @@ function run(
     last = now;
     const clock = (now - t0) / 1000;
     // adaptive quality: when frames run slow for a while, render fewer pixels instead of giving up
-    if (dt > 26 && cap > 1) {
-      if (++slow > 40) {
-        cap = 1;
+    if (dt > 22 && cap > 1) {
+      if (++slow > 45) {
+        cap = Math.max(1, cap * 0.75);
         slow = 0;
         measure();
       }
     } else slow = Math.max(0, slow - 1);
-    m.x += (m.tx - m.x) * 0.1;
-    m.y += (m.ty - m.y) * 0.1;
     if (!coarse) {
       m.tiltX += (m.ttx - m.tiltX) * 0.06;
       m.tiltY += (m.tty - m.tiltY) * 0.06;
     } else {
-      // phones: no hover, so the reflections sway slowly on their own
-      m.tiltX = 0.3 * Math.sin(clock * 0.4);
-      m.tiltY = 0.2 * Math.cos(clock * 0.31);
+      // touch screens: a sway on its own, steered by the phone's tilt when there is one
+      const sx = 0.42 * Math.sin(clock * 0.7),
+        sy = 0.3 * Math.cos(clock * 0.53);
+      const tx = touch.gyro ? clamp(touch.gx + sx * 0.4) : sx,
+        ty = touch.gyro ? clamp(-touch.gy + sy * 0.4) : sy;
+      m.tiltX += (tx - m.tiltX) * 0.08;
+      m.tiltY += (ty - m.tiltY) * 0.08;
+      if (touch.active || now < touch.until) m.tglint = 1;
+      else {
+        // the vermilion lamp circles the eye, pulled along by the tilt
+        const a = clock * 0.9;
+        const [bx0 = 0, by0 = 0, bw = 1, bh = 1] = box;
+        m.tx = bx0 + bw * (0.5 + 0.34 * Math.cos(a) + 0.22 * m.tiltX);
+        m.ty = by0 + bh * (0.5 + 0.24 * Math.sin(a * 1.3) + 0.18 * m.tiltY);
+        m.tglint = 0.85;
+      }
+      if (m.x < -1e4) [m.x, m.y] = [m.tx, m.ty];
     }
+    m.x += (m.tx - m.x) * 0.1;
+    m.y += (m.ty - m.y) * 0.1;
     m.glint += (m.tglint - m.glint) * 0.08;
     hov += (hovTarget - hov) * 0.18;
     const rv = Math.min(1, (now - t0) / POUR_MS);
@@ -482,6 +531,9 @@ function run(
     if (raf) cancelAnimationFrame(raf);
     removeEventListener('pointermove', onMove);
     removeEventListener('pointerdown', onDown);
+    removeEventListener('pointerup', onUp);
+    removeEventListener('pointercancel', onUp);
+    removeEventListener('deviceorientation', onTilt);
     svg.classList.remove('sigil-gl-on');
     canvas.remove();
     delete document.documentElement.dataset.sigilGl;

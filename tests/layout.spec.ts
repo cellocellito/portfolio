@@ -11,7 +11,7 @@ for (const width of [360, 412, 1440]) {
       const r = await page.evaluate(() => {
         const rect = (e: Element | null) => e?.getBoundingClientRect() ?? null;
         // centre of the union of a set of boxes (a track's rays are several paths, mirrored left and right)
-        const center = (els: Element[]) => {
+        const center = (els: Element[]): [number, number] | null => {
           if (!els.length) return null;
           const bs = els.map((e) => e.getBoundingClientRect());
           const l = Math.min(...bs.map((b) => b.left)),
