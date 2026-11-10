@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Portfolio of Marcelo \"Cello\" Ribeiro Lima: automation, AI and web work, in English and Portuguese.",
   "engines": {
-    "node": ">=22.23.4"
+    "node": "^22.23.4 || ^24.0.0"
   },
   "scripts": {
     "dev": "astro dev",

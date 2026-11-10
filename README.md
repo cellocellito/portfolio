@@ -15,10 +15,10 @@ My portfolio, in English and Portuguese. It is laid out like a record: Side A is
 
 ## Run
 
-Node 22.23.4 or later.
+Node 22 (22.23.4 or later) or Node 24.
 
 ```bash
-npm ci
+npm install
 npm run dev       # http://localhost:4321
 npm run build     # content checks, typecheck, build
 npm run preview   # serve dist/ on http://localhost:4321
