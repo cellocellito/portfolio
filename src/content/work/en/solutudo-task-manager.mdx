@@ -1,0 +1,37 @@
+---
+id: B3
+side: B
+order: 3
+title: "A Kanban task manager in React and SQL, with its own accounts, that replaced Solutudo's Excel spreadsheets."
+name: "Internal task manager"
+org: "Solutudo Brasil, Botucatu"
+when: "2026"
+summary: "Tasks are tracked per assignee on the board."
+status:
+  kind: shipped
+  label: "Replaced the Excel spreadsheets."
+stack: ["React", "SQL"]
+mock: true
+draft: false
+---
+
+## Context
+
+Tasks at Solutudo lived in Excel spreadsheets. It was an outdated system, and I like taking an old system and making it better.
+
+## What I built
+
+An internal web app in React with a SQL database: its own user accounts, tasks per assignee and a Kanban board. I can't show the real system. Any screen of it on this site is recreated with fake data.
+
+## Decisions
+
+- **A Kanban board.** Excel had no Kanban view, so a task could not move from one column to the next.
+- **Personal accounts instead of a shared login.** Everyone signs in as themselves, so every task has an owner.
+
+## What broke
+
+What I remember breaking is the integration with the old Excel spreadsheets.
+
+## Status
+
+It replaced the Excel spreadsheets, and as far as I know it is still in use.

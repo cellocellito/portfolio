@@ -1,0 +1,335 @@
+/* Reset + base typography for every page. Components add their own scoped styles. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+* {
+  margin: 0;
+}
+html {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 100%;
+  line-height: var(--lh-body);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  hanging-punctuation: first;
+}
+body {
+  min-height: 100svh;
+  font-size: var(--step-0);
+  overflow-x: clip;
+}
+/* Pass 2 texture: a faint 1-bit grain (scripts/make-grain.mjs) and a soft lift at the top of the page,
+   behind everything and over the whole document (not fixed, so it scrolls like printed stock and a
+   full-page capture shows it everywhere). Surfaces with their own background sit over it. */
+body {
+  position: relative;
+}
+body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 900px at 50% 0%, rgb(236 230 220 / 0.035), transparent 70%),
+    url('/textures/grain.png') repeat 0 0 / 192px 192px;
+}
+
+/* The spine: the codex gutter rule as one line down a page. A page passes <Base spine>; each
+   full-width block of it carries .spine-seg (optionally --spine-top to bridge the gap above it), and the
+   footer continues the line. The old per-block margin rules hide under it, so it reads as one line.
+   It sits where the margin rule is, so it never crosses text; only where the margins are (861 px up). */
+@media (min-width: 861px) {
+  .has-spine .spine-seg,
+  .has-spine .site-footer {
+    position: relative;
+  }
+  .has-spine .spine-seg::before,
+  .has-spine .site-footer::before {
+    content: '';
+    position: absolute;
+    top: var(--spine-top, 0);
+    bottom: 0;
+    left: calc((100% - min(100%, var(--page-max))) / 2 + var(--gutter) + var(--margin-col) - var(--rule));
+    width: var(--rule);
+    background: var(--line-strong);
+    pointer-events: none;
+  }
+  .has-spine .site-footer {
+    --spine-top: calc(-1 * var(--space-2xl));
+  }
+  /* specificity above the components' scoped rules (attribute selectors) */
+  body.has-spine .spine-seg .leaf > .margin,
+  body.has-spine .site-footer .foot-grid > .rubric {
+    border-right-color: transparent;
+  }
+  /* One rule for nodes: every section head that sits on the spine gets one: section
+     openers, margin headings (About, case stack and links), the footer's Contact. Case and note body
+     headings draw theirs in their own views. */
+  body.has-spine .spine-seg .section-head > .margin,
+  body.has-spine .spine-seg .leaf > .margin:has(> .mh),
+  body.has-spine .site-footer .foot-grid > .rubric {
+    position: relative;
+  }
+  body.has-spine .spine-seg .section-head > .margin::after,
+  body.has-spine .spine-seg .leaf > .margin:has(> .mh)::after,
+  body.has-spine .site-footer .foot-grid > .rubric::after {
+    content: '';
+    position: absolute;
+    top: 0.45rem;
+    right: -0.3rem;
+    width: 0.6rem;
+    height: 0.6rem;
+    border: var(--rule) solid var(--accent);
+    background: var(--bg);
+    transform: rotate(45deg);
+  }
+}
+@media print {
+  body::before {
+    display: none;
+  }
+}
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+img {
+  height: auto;
+}
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 500;
+  line-height: var(--lh-tight);
+  text-wrap: balance;
+  letter-spacing: -0.01em;
+}
+h1 {
+  font-size: var(--step-4);
+}
+h2 {
+  font-size: var(--step-3);
+}
+h3 {
+  font-size: var(--step-1);
+}
+p,
+li,
+dd {
+  text-wrap: pretty;
+}
+p {
+  max-width: var(--measure);
+}
+strong {
+  font-weight: 600;
+}
+em {
+  font-style: italic;
+}
+
+a {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-color: var(--line-strong);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  transition:
+    color var(--dur-fast) var(--ease-ink),
+    text-decoration-color var(--dur-fast) var(--ease-ink);
+}
+a:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+/* Focus: instant, always visible, vermilion with a dark inner ring so it reads on any surface. */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 1px var(--bg);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+ul,
+ol {
+  padding-left: 1.25em;
+}
+li + li {
+  margin-top: var(--space-3xs);
+}
+dt {
+  color: var(--muted);
+}
+code,
+kbd,
+samp {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+hr {
+  border: 0;
+  border-top: var(--rule) solid var(--line);
+}
+
+/* utilities used across components */
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--mono-s);
+  letter-spacing: var(--track-mono);
+  text-transform: uppercase;
+  line-height: 1.6;
+}
+.rubric {
+  font-family: var(--font-mono);
+  font-size: var(--mono-s);
+  letter-spacing: var(--track-mono);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+/* margin heading: a section title set in the codex margin (case pages, about, home stack) */
+.mh {
+  font-family: var(--font-serif);
+  font-size: var(--step-1);
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+}
+.small-caps {
+  font-variant-caps: all-small-caps;
+  letter-spacing: var(--track-caps);
+}
+.wordmark {
+  font-family: var(--font-wordmark);
+  font-weight: 400;
+  line-height: 0.86;
+  letter-spacing: 0;
+  font-kerning: none;
+}
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Visible TODO markers rendered by integrations/todo-marks.mjs */
+mark[data-todo] {
+  background: transparent;
+  color: var(--muted); /* visible, but quieter than the real copy (5.6:1 on bg) */
+  font-family: var(--font-mono);
+  font-size: var(--mono-m);
+  letter-spacing: 0;
+  text-transform: none;
+  border: 1px dashed var(--line-strong);
+  padding: 0.05em 0.35em;
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* Dither reveals (src/scripts/motion.ts): a canvas in the page colour covers a block until it scrolls in */
+.rv-host {
+  position: relative;
+}
+.rv-cover {
+  position: absolute;
+  inset: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  image-rendering: pixelated;
+  pointer-events: none;
+  z-index: 2;
+}
+.rv-fade {
+  opacity: 0;
+}
+.rv-fade.rv-in {
+  opacity: 1;
+  transition: opacity var(--dur-base) var(--ease-ink);
+}
+@media print {
+  .rv-cover {
+    display: none;
+  }
+  .rv-fade {
+    opacity: 1;
+  }
+}
+
+/* Liquid-chrome sigils (src/scripts/hero-gl.ts): the canvas sits over the SVG inside the sigil's parent,
+   which is positioned; the bone SVG steps back once the metal has filled it */
+.sigil-gl {
+  position: absolute;
+  max-width: none; /* it overhangs the drawing a little, for the lamp's rim light */
+  pointer-events: none;
+}
+.sigil-gl-on {
+  visibility: hidden;
+}
+
+/* Page to page: a short cross-fade, the header stays put. Off under reduced motion. */
+@view-transition {
+  navigation: auto;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-base);
+  animation-timing-function: var(--ease-ink);
+}
+.site-header {
+  view-transition-name: site-header;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,115 @@
+---
+// The record's mark: the Halo sigil, drawn at build time from the published tracklist
+// (src/lib/sigil/mark.ts). One per page: the home, every case cover, the 404. It renders through WebGL as
+// liquid chrome (src/scripts/hero-gl.ts); this SVG is the shape it reads and the fallback without WebGL.
+// Each track's rays carry data-key; the current case's rays are .here (lit). A second SVG holds wide
+// invisible strokes along every ray, so pointing at a ray names its track and clicking opens it
+// (src/scripts/mark.ts). Decorative for assistive tech: the track list says the same thing in words.
+import { localePath, type Locale } from '../i18n';
+import { position, slugOf, works } from '../lib/content';
+import { halo, MARK_H, MARK_W } from '../lib/sigil/mark';
+
+interface Props {
+  locale: Locale;
+  /** the case this page shows: its rays are lit */
+  current?: string;
+  /** class on the wrapper (layout) */
+  class?: string;
+  /** class on the drawing itself (size) */
+  svgClass?: string;
+}
+const { locale, current, class: cls, svgClass } = Astro.props;
+const tracks = (await works(locale)).map((e) => ({
+  pos: position(e),
+  slug: slugOf(e),
+  name: e.data.name,
+  href: localePath(locale, `/work/${slugOf(e)}`),
+}));
+const { base, items } = halo(tracks);
+const vb = `0 0 ${MARK_W} ${MARK_H}`;
+---
+
+<div class:list={['mark', cls]}>
+  <svg class:list={['sigil', 'is-mark', svgClass]} viewBox={vb} aria-hidden="true" focusable="false" data-gl data-dilate="0.6">
+    <g fill="currentColor" fill-rule="evenodd">
+      {base.map((d) => (
+        <path d={d} />
+      ))}
+      {items.map((it) => it.shapes.map((d) => <path d={d} data-key={it.pos} class={it.slug === current ? 'here' : undefined} />))}
+    </g>
+  </svg>
+  <svg class="mark-hit" viewBox={vb} aria-hidden="true" focusable="false">
+    {items.map((it) => (
+      <g data-key={it.pos} data-label={`${it.pos} · ${it.name}`} data-href={it.href} class={it.slug === current ? 'here' : undefined}>
+        {it.hit.map((d) => (
+          <path class="hit" d={d} />
+        ))}
+      </g>
+    ))}
+  </svg>
+  <span class="mark-tip mono" aria-hidden="true"></span>
+</div>
+
+<style>
+  /* the drawing and the hit layer share one grid cell, so the hit strokes sit exactly on the rays; the
+     WebGL canvas is placed inside this box too (absolute) */
+  .mark {
+    position: relative;
+    display: grid;
+    justify-items: center;
+  }
+  .mark > svg {
+    grid-area: 1 / 1;
+  }
+  .is-mark {
+    color: var(--ink);
+  }
+  .is-mark :global(path) {
+    transition: fill 220ms linear;
+  }
+  .is-mark :global(path.here),
+  .is-mark :global(path.on) {
+    fill: var(--accent); /* before the metal pours, and without WebGL */
+  }
+  .mark-hit {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .mark-hit :global(.hit) {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: stroke;
+    cursor: pointer;
+  }
+  .mark-hit :global(.here .hit) {
+    cursor: default;
+  }
+  .mark-tip {
+    position: absolute;
+    z-index: 3;
+    left: 0;
+    top: 0;
+    padding: 4px 8px;
+    border: var(--rule) solid var(--accent);
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(16px, -140%);
+    transition: opacity 160ms linear;
+  }
+  .mark-tip:global(.on) {
+    opacity: 1;
+  }
+</style>

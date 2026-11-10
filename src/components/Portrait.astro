@@ -1,0 +1,59 @@
+---
+// The 1-bit portrait made at build time by scripts/dither-portrait.mjs, in a thorn frame.
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Frame from './Frame.astro';
+
+interface Props {
+  alt: string;
+  tone?: 'bone' | 'accent';
+  caption?: string;
+  /** show source and grid size (styleguide only) */
+  showMeta?: boolean;
+}
+const { alt, tone = 'bone', caption, showMeta = false } = Astro.props;
+const files = import.meta.glob<{ default: ImageMetadata }>('/src/assets/portrait/generated/portrait-*.png', { eager: true });
+const img = Object.entries(files).find(([k]) => k.endsWith(`portrait-${tone}.png`))?.[1]?.default;
+const meta = import.meta.glob<{ default: { source: string; width: number; height: number; cols: number; rows: number } }>(
+  '/src/assets/portrait/generated/meta.json',
+  { eager: true },
+);
+const m = Object.values(meta)[0]?.default;
+---
+
+{img && (
+  <figure class="portrait" data-reveal="dither">
+    <Frame>
+      <Image src={img} alt={alt} format="png" width={img.width} height={img.height} class="dots" />
+    </Frame>
+    <figcaption class="mono">
+      <span>{caption ?? 'Fig. I'}</span>
+      {showMeta && m && (
+        <span class="meta">
+          {m.source} · {m.width}×{m.height} → {m.cols}×{m.rows}
+        </span>
+      )}
+    </figcaption>
+  </figure>
+)}
+
+<style>
+  .portrait {
+    max-width: 22rem;
+  }
+  .dots {
+    width: 100%;
+    height: auto;
+    image-rendering: pixelated;
+  }
+  figcaption {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2xs);
+    margin-top: var(--space-xs);
+    color: var(--ink);
+  }
+  .meta {
+    color: var(--muted);
+  }
+</style>

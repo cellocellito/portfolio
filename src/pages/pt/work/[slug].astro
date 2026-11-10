@@ -1,0 +1,13 @@
+---
+import { getCollection } from 'astro:content';
+import Case from '../../../views/Case.astro';
+import { splitId } from '../../../i18n';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('work', (e) => !e.data.draft && splitId(e.id).locale === 'pt');
+  return entries.map((entry) => ({ params: { slug: splitId(entry.id).slug }, props: { entry } }));
+}
+const { entry } = Astro.props;
+---
+
+<Case entry={entry} locale="pt" />

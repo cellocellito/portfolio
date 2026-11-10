@@ -1,0 +1,111 @@
+---
+// The codex grid row: margin (rubrics, marginalia) | text column | ornament column.
+// Below 860px the margin folds above the text and justified text turns left-aligned.
+interface Props {
+  as?: 'div' | 'li' | 'section' | 'article';
+  class?: string;
+  ruled?: boolean;
+  /** on phones, put the marginalia under the text (tracklist rows) */
+  marginLast?: boolean;
+  /** arrive through the dither reveal when it scrolls in (motion.ts) */
+  reveal?: boolean | 'dither';
+}
+const { as: Tag = 'div', class: cls, ruled = false, marginLast = false, reveal = false } = Astro.props;
+const hasOrn = Astro.slots.has('ornament');
+---
+
+<Tag
+  class:list={['leaf', cls, { ruled, 'no-orn': !hasOrn, 'margin-last': marginLast }]}
+  data-reveal={reveal === 'dither' ? 'dither' : reveal ? '' : undefined}
+>
+  <div class="margin">
+    <slot name="margin" />
+  </div>
+  <div class="body">
+    <slot />
+  </div>
+  {hasOrn && (
+    <div class="orn">
+      <slot name="ornament" />
+    </div>
+  )}
+</Tag>
+
+<style>
+  .leaf {
+    display: grid;
+    grid-template-columns: var(--margin-col) minmax(0, 1fr) var(--ornament-col);
+    column-gap: var(--gutter);
+    padding-inline: var(--gutter);
+    max-width: var(--page-max);
+    margin-inline: auto;
+  }
+  .leaf.no-orn {
+    grid-template-columns: var(--margin-col) minmax(0, 1fr);
+  }
+  .ruled {
+    border-top: var(--rule) solid var(--line);
+    padding-block: var(--space-l);
+  }
+  .margin {
+    text-align: right;
+    padding-right: var(--space-s);
+    border-right: var(--rule) solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    letter-spacing: var(--track-mono);
+    text-transform: uppercase;
+    color: var(--soft);
+    line-height: 1.7;
+  }
+  .orn {
+    justify-self: end;
+  }
+  @media (max-width: 860px) {
+    .leaf,
+    .leaf.no-orn {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .margin {
+      grid-column: 1 / -1;
+      text-align: left;
+      border-right: 0;
+      padding: 0 0 var(--space-xs);
+    }
+    .leaf.no-orn .body {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (max-width: 860px) {
+    .margin-last .body {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .margin-last .orn {
+      grid-column: 2;
+      grid-row: 1;
+      align-self: start;
+    }
+    .margin-last .margin {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      padding: var(--space-xs) 0 0;
+    }
+  }
+  /* on phones the ornament moves up beside the marginalia so the headline gets the full column */
+  @media (max-width: 560px) {
+    .orn {
+      grid-column: 2;
+      grid-row: 1;
+      align-self: start;
+    }
+    .margin {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .body {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+  }
+</style>

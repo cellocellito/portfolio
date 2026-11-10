@@ -1,0 +1,430 @@
+---
+import '../styles/fonts.css';
+import '../styles/tokens.css';
+import '../styles/base.css';
+import '../styles/motion.css';
+import { htmlLang, localePath, switchLocale, t, type Locale } from '../i18n';
+import { profile } from '../data/profile';
+import { NOTES_PUBLISHED } from '../lib/content';
+import { OG_H, OG_W, ogPath } from '../lib/og-path';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description: string;
+  /** For pages with no mirror (404, styleguide): toggle goes to the home pages, no canonical/hreflang, noindex. */
+  standalone?: boolean;
+  /** schema.org data for this page (the home pages pass the Person) */
+  jsonLd?: Record<string, unknown>;
+  ogType?: 'website' | 'article' | 'profile';
+  /** draw the codex spine down the page (base.css: .has-spine, .spine-seg) */
+  spine?: boolean;
+  /** an element id the first paint waits for, so a page transition can find its title (public/head.js) */
+  expect?: string;
+  /** the face of this page's LCP element, preloaded: the "Cello" wordmark (home, 404) or a serif headline (cases) */
+  lcpFont?: 'display' | 'serif';
+}
+const {
+  locale,
+  title,
+  description,
+  standalone = false,
+  jsonLd,
+  ogType = 'website',
+  spine = false,
+  expect,
+  lcpFont = 'display',
+} = Astro.props;
+const preloadFont = lcpFont === 'serif' ? '/fonts/newsreader-latin-wght-normal.woff2' : '/fonts/jacquard-24-latin-400-normal.woff2';
+const s = t(locale);
+const p = profile(locale);
+const site = Astro.site ?? new URL('https://portfolio-marcelo-mocha.vercel.app');
+const enHref = standalone ? '/' : switchLocale(Astro.url.pathname, 'en');
+const ptHref = standalone ? '/pt' : switchLocale(Astro.url.pathname, 'pt');
+const here = locale === 'en' ? enHref : ptHref;
+const home = localePath(locale, '/');
+const thisSite = localePath(locale, '/work/this-site');
+const bare = Astro.url.pathname.replace(/\.html$/, '').replace(/^\/pt(?=\/|$)/, '') || '/';
+const current = (section: 'work' | 'notes' | 'about'): 'page' | 'true' | undefined => {
+  if (section === 'notes') return bare === '/notes' ? 'page' : bare.startsWith('/notes/') ? 'true' : undefined;
+  if (section === 'about') return bare === '/about' ? 'page' : undefined;
+  return bare.startsWith('/work/') ? 'true' : undefined;
+};
+// Sharing: every page names its own OG image; the 404 and the styleguide use the home one.
+const ogImage = new URL(standalone ? ogPath('/') : ogPath(Astro.url.pathname), site).href;
+const ogLocale = locale === 'pt' ? 'pt_BR' : 'en_US';
+// A data block, not a script: "<" is escaped so content can never close the element.
+const ld = jsonLd ? JSON.stringify(jsonLd).replace(/</g, '\\u003c') : undefined;
+---
+
+<!doctype html>
+<html lang={htmlLang[locale]}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#080707" />
+    {expect && <link rel="expect" href={`#${expect}`} blocking="render" />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="preload" href={preloadFont} as="font" type="font/woff2" crossorigin />
+    {standalone ? (
+      <meta name="robots" content="noindex" />
+    ) : (
+      <>
+        <link rel="canonical" href={new URL(here, site).href} />
+        <link rel="alternate" hreflang="en" href={new URL(enHref, site).href} />
+        <link rel="alternate" hreflang="pt-BR" href={new URL(ptHref, site).href} />
+        <link rel="alternate" hreflang="x-default" href={new URL(enHref, site).href} />
+      </>
+    )}
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={s.meta.siteName} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={new URL(standalone ? home : here, site).href} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content={String(OG_W)} />
+    <meta property="og:image:height" content={String(OG_H)} />
+    <meta property="og:image:alt" content={title} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta property="og:locale:alternate" content={locale === 'pt' ? 'en_US' : 'pt_BR'} />
+    <meta name="twitter:card" content="summary_large_image" />
+    {ld && <script type="application/ld+json" set:html={ld} />}
+  </head>
+  <body class:list={[{ 'has-spine': spine }]}>
+    {/* parser-blocking on purpose and tiny: the motion class and the page-to-page transition must be set
+        before any content is painted (a file: the CSP is script-src 'self'). First in <body>, not in <head>,
+        so the font preload and the stylesheets above it start loading without waiting for it (LCP). */}
+    <script is:inline src="/head.js"></script>
+    {/* the rough ink edge of the status stamps (StatusTag, the case cover stamp) */}
+    <svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+      <filter id="ink">
+        <feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="4" result="n"></feTurbulence>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="1.6"></feDisplacementMap>
+      </filter>
+    </svg>
+    <a class="skip" href="#content">
+      {s.a11y.skip}
+    </a>
+    <header class="site-header">
+      <div class="bar">
+        <a class="home wordmark" href={home} aria-label={`${p.nickname}, ${p.name}`}>
+          {p.nickname}
+        </a>
+        <nav aria-label={s.a11y.primaryNav}>
+          <ul>
+            <li>
+              <a href={`${home}#side-a`} aria-current={current('work')}>
+                {s.nav.work}
+              </a>
+            </li>
+            {NOTES_PUBLISHED && (
+              <li>
+                <a href={localePath(locale, '/notes')} aria-current={current('notes')}>
+                  {s.nav.notes}
+                </a>
+              </li>
+            )}
+            <li>
+              <a href={localePath(locale, '/about')} aria-current={current('about')}>
+                {s.nav.about}
+              </a>
+            </li>
+            <li>
+              <a href={p.cv}>{s.nav.cv}</a>
+            </li>
+            <li>
+              <a href="#contact">{s.nav.contact}</a>
+            </li>
+          </ul>
+        </nav>
+        <nav aria-label={s.a11y.langSwitch} class="lang">
+          <ul>
+            <li>
+              <a
+                href={enHref}
+                hreflang="en"
+                lang="en"
+                aria-label={`${s.lang.en}, ${s.a11y.toEnglish}`}
+                aria-current={!standalone && locale === 'en' ? 'page' : undefined}
+              >
+                {s.lang.en}
+              </a>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li>
+              <a
+                href={ptHref}
+                hreflang="pt-BR"
+                lang="pt-BR"
+                aria-label={`${s.lang.pt}, ${s.a11y.toPortuguese}`}
+                aria-current={!standalone && locale === 'pt' ? 'page' : undefined}
+              >
+                {s.lang.pt}
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="content" tabindex="-1">
+      <slot />
+    </main>
+
+    <footer id="contact" class="site-footer">
+      <div class="foot-grid">
+        <p class="rubric" aria-hidden="true">
+          {s.home.contactTitle}
+        </p>
+        <div>
+          <h2 class="foot-title">{s.home.contactTitle}</h2>
+          <p class="mail">
+            <a href={`mailto:${p.email}`}>
+              {p.email.split('@')[0]}
+              <wbr />@{p.email.split('@')[1]}
+            </a>
+          </p>
+          <ul class="foot-links">
+            <li>
+              <a href={p.cv}>{s.contact.cv}</a>
+            </li>
+            <li>
+              <a href={p.links.github} rel="noopener noreferrer">
+                {s.contact.github}
+              </a>
+            </li>
+            <li>
+              <a href={p.links.linkedin} rel="noopener noreferrer">
+                {s.contact.linkedin}
+              </a>
+            </li>
+          </ul>
+          <p class="colophon">
+            {s.footer.colophon} <a href={thisSite}>{s.footer.howBuilt}</a>
+          </p>
+        </div>
+      </div>
+    </footer>
+    <script>
+      import '../scripts/lang';
+      import '../scripts/motion';
+      import { initMark } from '../scripts/mark';
+      initMark();
+    </script>
+  </body>
+</html>
+
+<style>
+  .defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+  .skip {
+    position: absolute;
+    left: var(--gutter);
+    top: -10rem;
+    z-index: var(--z-skip);
+    background: var(--accent);
+    color: var(--on-accent);
+    padding: var(--space-2xs) var(--space-s);
+    font-family: var(--font-mono);
+    font-size: var(--mono-m);
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+  .skip:focus-visible {
+    top: var(--space-2xs);
+  }
+
+  .site-header {
+    border-bottom: var(--rule) solid var(--line);
+    font-family: var(--font-mono);
+    font-size: var(--mono-s);
+    letter-spacing: var(--track-mono);
+    text-transform: uppercase;
+  }
+  /* header, sections and footer share one codex grid (wordmark sits in the margin column) */
+  .bar {
+    display: grid;
+    grid-template-columns: var(--margin-col) minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--gutter);
+    padding: var(--space-xs) var(--gutter);
+    max-width: var(--page-max);
+    margin-inline: auto;
+  }
+  .home {
+    justify-self: end;
+    padding-right: var(--space-s);
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: var(--wordmark-xs);
+    text-transform: none;
+    text-decoration: none;
+    line-height: 1;
+  }
+  .site-header ul {
+    display: flex;
+    gap: var(--space-m);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .site-header li + li {
+    margin-top: 0;
+  }
+  .site-header a:not(.home) {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    text-decoration: none;
+  }
+  .bar > nav:not(.lang) a[aria-current] {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-underline-offset: 0.45em;
+  }
+  .lang a {
+    padding-inline: var(--space-2xs);
+  }
+  .site-header a:not(.home):hover {
+    color: var(--accent);
+  }
+  .lang ul {
+    align-items: center;
+    gap: var(--space-2xs);
+    color: var(--muted);
+  }
+  .lang [aria-current='page'] {
+    color: var(--accent);
+  }
+
+  main {
+    display: block;
+  }
+  main:focus {
+    outline: none;
+  }
+
+  /* the footer hairline sits inside the content frame like every section hairline */
+  .site-footer {
+    margin-top: var(--space-2xl);
+    padding: 0 0 var(--space-2xl);
+  }
+  .foot-grid {
+    border-top: var(--rule) solid var(--line);
+    padding-top: var(--space-xl);
+    padding-inline: var(--gutter);
+    display: grid;
+    grid-template-columns: var(--margin-col) minmax(0, 1fr);
+    column-gap: var(--gutter);
+    max-width: var(--page-max);
+    margin-inline: auto;
+  }
+  .foot-grid > .rubric {
+    text-align: right;
+    padding-right: var(--space-s);
+    border-right: var(--rule) solid var(--line);
+  }
+  .foot-title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .mail {
+    font-size: min(var(--step-3), 8vw);
+    line-height: 1.1;
+    overflow-wrap: normal;
+  }
+  .mail a {
+    display: inline-block;
+    padding-block: 0.35rem;
+    text-decoration-thickness: 1px;
+  }
+  .foot-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-m);
+    list-style: none;
+    padding: 0;
+    margin-top: var(--space-m);
+    font-family: var(--font-mono);
+    font-size: var(--mono-s);
+    text-transform: uppercase;
+    letter-spacing: var(--track-mono);
+  }
+  .foot-links li + li {
+    margin-top: 0;
+  }
+  .foot-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .colophon {
+    margin-top: var(--space-l);
+    color: var(--muted);
+    font-style: italic;
+  }
+  .colophon a {
+    white-space: nowrap;
+  }
+
+  /* header and footer fold at the same 860px as the content grid */
+  @media (max-width: 860px) {
+    .bar {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+    .home {
+      justify-self: start;
+      padding-right: 0;
+    }
+    .foot-grid {
+      grid-template-columns: 1fr;
+    }
+    .foot-grid > .rubric {
+      text-align: left;
+      border-right: 0;
+      padding: 0 0 var(--space-xs);
+    }
+  }
+  /* the 12 px footer links read small on a phone (the header stays 12 px, or the
+     PT nav wraps to three rows) */
+  @media (max-width: 560px) {
+    .foot-links {
+      font-size: var(--mono-m);
+    }
+  }
+  @media (max-width: 400px) {
+    .bar > nav:not(.lang) ul {
+      column-gap: 0.7rem;
+    }
+  }
+  @media (max-width: 640px) {
+    .bar {
+      grid-template-columns: auto 1fr;
+      row-gap: 0;
+    }
+    .bar > nav:not(.lang) ul {
+      flex-wrap: wrap;
+      column-gap: var(--space-s);
+      row-gap: 0;
+    }
+    .lang {
+      justify-self: end;
+    }
+    .bar > nav:not(.lang) {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+  }
+</style>

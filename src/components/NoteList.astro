@@ -1,0 +1,114 @@
+---
+// Field notes as errata leaves: id and status in the margin, an open bug in vermilion.
+import Leaf from './Leaf.astro';
+import Words from './Words.astro';
+import StatusTag from './StatusTag.astro';
+import { localePath, t, type Locale } from '../i18n';
+import { slugOf, type Note } from '../lib/content';
+
+interface Props {
+  entries: Note[];
+  locale: Locale;
+  level?: 2 | 3;
+}
+const { entries, locale, level = 3 } = Astro.props;
+const s = t(locale);
+const H = level === 2 ? 'h2' : 'h3';
+---
+
+<ol class="notes">
+  {entries.map((n) => (
+    <Leaf as="li" ruled class="note" reveal>
+      <Fragment slot="margin">
+        <span class="m">{n.data.id}</span>
+        <span class="m">
+          <StatusTag
+            label={s.notes.status[n.data.status]}
+            tone={n.data.status === 'open' ? 'open' : n.data.status === 'fixed' ? 'done' : 'neutral'}
+          />
+        </span>
+        {n.data.date && <span class="m">{n.data.date}</span>}
+      </Fragment>
+      <H class="title">
+        <a href={localePath(locale, `/notes/${slugOf(n)}`)}>
+          <Words text={n.data.title}>
+            <span class="arrow" aria-hidden="true">
+              →
+            </span>
+          </Words>
+        </a>
+      </H>
+      <p class="sum">{n.data.summary}</p>
+      <p class="stack mono">{n.data.stack.join(' · ')}</p>
+    </Leaf>
+  ))}
+</ol>
+
+<style>
+  .notes {
+    list-style: none;
+    padding: 0;
+  }
+  .notes :global(.note) {
+    position: relative;
+    transition: background-color var(--dur-base) var(--ease-ink);
+  }
+  .notes :global(li + li) {
+    margin-top: 0;
+  }
+  .notes :global(.note:hover),
+  .notes :global(.note:focus-within) {
+    background: var(--surface);
+  }
+  .notes :global(.note:has(a:focus-visible)) {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+  .m {
+    display: block;
+  }
+  .m + .m {
+    margin-top: var(--space-3xs);
+  }
+  .title {
+    font-size: var(--step-2);
+    font-weight: 500;
+    max-width: 34ch;
+  }
+  .title a {
+    text-decoration: none;
+  }
+  .title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  .title a:focus-visible {
+    outline: none;
+  }
+  .arrow {
+    display: inline-block;
+    margin-left: 0.3em;
+    color: var(--accent);
+    transition: transform var(--dur-fast) var(--ease-ink);
+  }
+  .notes :global(.note:hover) .arrow {
+    transform: translateX(4px);
+  }
+  .sum {
+    margin-top: var(--space-2xs);
+    color: var(--soft);
+  }
+  .stack {
+    margin-top: var(--space-xs);
+    color: var(--muted);
+  }
+  @media (max-width: 860px) {
+    .m {
+      display: inline-block;
+    }
+    .m + .m {
+      margin: 0 0 0 var(--space-xs);
+    }
+  }
+</style>

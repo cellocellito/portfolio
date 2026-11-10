@@ -1,0 +1,135 @@
+---
+// Fake-data sketch of a Kanban board with accounts and tasks per assignee (B3). Decorative twin of the
+// case text, hidden from assistive tech; the figure caption says what it is.
+import { mockKanban } from '../data/mocks';
+import type { Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  /** the permanent "Recreated with fake data" label, repeated inside the mock */
+  stamp: string;
+}
+const m = mockKanban(Astro.props.locale);
+---
+
+<div class="mock kanban" aria-hidden="true">
+  <div class="top">
+    <span class="title">{m.board}</span>
+    <span class="stamp">{Astro.props.stamp}</span>
+    <span class="user">
+      <span class="avatar">DU</span>
+      <span class="user-name">{m.user}</span>
+    </span>
+  </div>
+  <div class="cols">
+    {m.columns.map((c) => (
+      <div class="col">
+        <p class="col-name">
+          {c.name} <span class="count">{c.cards.length}</span>
+        </p>
+        {c.cards.map((card) => (
+          <div class="card">
+            <span class="task">{card.task}</span>
+            <span class="avatar">{card.who}</span>
+          </div>
+        ))}
+      </div>
+    ))}
+  </div>
+</div>
+
+<style>
+  .stamp {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: var(--track-mono);
+    text-transform: uppercase;
+    color: var(--accent);
+    border: var(--rule) solid var(--accent);
+    padding: 0.1em 0.5em;
+  }
+  .mock {
+    font-family: var(--font-mono);
+    font-size: var(--mono-s);
+    letter-spacing: var(--track-mono);
+    color: var(--soft);
+    background: var(--surface);
+    user-select: none;
+  }
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-s);
+    padding: var(--space-xs) var(--space-s);
+    border-bottom: var(--rule) solid var(--line);
+  }
+  .title {
+    color: var(--ink);
+    text-transform: uppercase;
+  }
+  .user {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+  }
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-s);
+    padding: var(--space-s);
+  }
+  .col {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2xs);
+  }
+  .col-name {
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: var(--space-3xs);
+  }
+  .count {
+    color: var(--soft);
+  }
+  .card {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: var(--space-2xs);
+    padding: var(--space-xs);
+    background: var(--surface-2);
+    border: var(--rule) solid var(--line);
+    font-family: var(--font-serif);
+    font-size: var(--step--1);
+    letter-spacing: 0;
+    color: var(--ink);
+    line-height: 1.35;
+  }
+  .avatar {
+    flex: none;
+    display: inline-grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border: var(--rule) solid var(--line-strong);
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    color: var(--soft);
+  }
+  /* on phones the bar keeps the title and the fake-data stamp on one row, and the
+     demo user shows as its avatar only */
+  .stamp {
+    white-space: nowrap;
+  }
+  @media (max-width: 480px) {
+    .user-name {
+      display: none;
+    }
+  }
+  @media (max-width: 560px) {
+    .cols {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

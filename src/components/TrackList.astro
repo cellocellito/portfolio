@@ -1,0 +1,242 @@
+---
+// Tracklist as manuscript leaves: marginalia | position + headline + summary. no sigil per
+// row (one mark for the whole site, Mark.astro); the hovered row turns to bone paper.
+// One link per row (the headline); the whole row is clickable through a stretched pseudo-element.
+import Leaf from './Leaf.astro';
+import Words from './Words.astro';
+import StatusTag from './StatusTag.astro';
+import { localePath, t, type Locale } from '../i18n';
+import { position, slugOf, type Work } from '../lib/content';
+
+interface Props {
+  entries: Work[];
+  locale: Locale;
+}
+const { entries, locale } = Astro.props;
+const s = t(locale);
+---
+
+<ol class="tracks">
+  {entries.map((e) => (
+    <Leaf as="li" ruled class="track" marginLast reveal>
+      <Fragment slot="margin">
+        {e.data.org && <span class="m">{e.data.org}</span>}
+        <span class="m nowrap">{e.data.when.includes('TODO') ? s.work.whenTodo : e.data.when}</span>
+        <span class="m">{e.data.status.kind === 'todo' ? s.work.statusTodo : <StatusTag label={s.statusKind[e.data.status.kind]} />}</span>
+      </Fragment>
+      <div class="row">
+        <span class="pos" aria-hidden="true">
+          {position(e)}
+        </span>
+        <div>
+          <h3 class="headline">
+            <a href={localePath(locale, `/work/${slugOf(e)}`)}>
+              <span class="sr-only">{position(e)}. </span>
+              <Words text={e.data.title}>
+                <span class="arrow" aria-hidden="true">
+                  →
+                </span>
+              </Words>
+            </a>
+          </h3>
+          {/* an unconfirmed summary (B1, B2) stays on the case page; the row says where the site is live */}
+          {e.data.summary.includes('TODO') ? (
+            e.data.links.live && (
+              <p class="summary">
+                {s.work.liveAt} {new URL(e.data.links.live).host}
+              </p>
+            )
+          ) : (
+            <p class="summary">{e.data.summary}</p>
+          )}
+          {/* the tools on every row, so the list says what each track is built with (unconfirmed
+              items stay on the case page) */}
+          <p class="stack mono">
+            <span class="sr-only">{s.work.stack}: </span>
+            {e.data.stack.filter((x) => !x.includes('TODO')).join(' · ')}
+          </p>
+        </div>
+      </div>
+    </Leaf>
+  ))}
+</ol>
+
+<style>
+  .tracks {
+    list-style: none;
+    padding: 0;
+  }
+  .tracks :global(li + li) {
+    margin-top: 0;
+  }
+  .tracks :global(.track) {
+    position: relative;
+    transition: background-color 120ms var(--ease-ink);
+  }
+  .tracks :global(.track:last-child) {
+    border-bottom: var(--rule) solid var(--line);
+  }
+  /* the hovered row turns to bone paper and its text to ink; the vermilion deepens to hold on
+     the paper. With motion, the paper wipes in through a dithered front (motion.css, g) */
+  .tracks :global(.track:hover),
+  .tracks :global(.track:focus-within) {
+    background: var(--ink);
+  }
+  .tracks :global(.track:is(:hover, :focus-within) :is(.headline, .headline a, .summary, .stack, .margin, .m)) {
+    color: var(--bg);
+  }
+  .tracks :global(.track:is(:hover, :focus-within) mark[data-todo]) {
+    color: #3a332e;
+    border-color: #3a332e;
+  }
+  .tracks :global(.track:is(:hover, :focus-within) :is(.pos, .arrow, .status)) {
+    color: #c4210d;
+    border-color: #c4210d;
+    outline-color: #c4210d;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: var(--space-m);
+    align-items: start;
+  }
+  .pos {
+    font-style: italic;
+    color: var(--accent);
+    font-size: var(--step-5);
+    line-height: 0.8;
+    min-width: 1.5em;
+    letter-spacing: -0.02em;
+  }
+  .headline {
+    font-size: clamp(1.6rem, 1.2rem + 1.3vw, 2.4rem);
+    font-weight: 500;
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    max-width: 38ch;
+  }
+  .headline a {
+    text-decoration: none;
+  }
+  .headline a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  .headline a:focus-visible {
+    outline: none;
+  }
+  .tracks :global(.track:has(a:focus-visible)) {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
+  .summary {
+    margin-top: var(--space-2xs);
+    color: var(--soft);
+    text-align: start;
+  }
+  .stack {
+    margin-top: var(--space-xs);
+    color: var(--muted);
+    text-transform: none;
+  }
+  .m {
+    display: block;
+  }
+  .nowrap {
+    white-space: nowrap;
+  }
+  .arrow {
+    display: inline-block;
+    margin-left: 0.3em;
+    color: var(--accent);
+    transition: transform var(--dur-fast) var(--ease-ink);
+  }
+  .tracks :global(.track:hover) .arrow {
+    transform: translateX(4px);
+  }
+  /* A thorn from the spine (Home) toward the position numeral; it grows out of the spine when the row
+     arrives (motion.ts fades rows in below the fold; rows already on screen grow at load) and turns
+     vermilion with the row. Wide screens only, like the spine. A scroll timeline was measured first and
+     cost about 100 ms of main thread on a throttled phone. */
+  @media (min-width: 861px) {
+    .tracks :global(.track)::before {
+      content: '';
+      position: absolute;
+      top: calc(var(--space-l) + 1.5rem);
+      left: calc(var(--gutter) + var(--margin-col) - var(--rule));
+      width: calc(var(--gutter) - 0.2rem);
+      height: 0.9rem;
+      /* an SVG background in the two token colours (#8f867b --muted, #ff3b21 --accent), not a CSS mask:
+         a masked box inside a row that had faded in was dropped from full-page captures */
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 14' preserveAspectRatio='none'%3E%3Cpath fill='%238f867b' d='M0 7.2C14 7.2 31 5.6 48 0.6C32 9.6 15 12.6 0 12.6Z'/%3E%3C/svg%3E")
+        no-repeat 0 0 / 100% 100%;
+      pointer-events: none;
+    }
+    .tracks :global(.track:hover)::before,
+    .tracks :global(.track:focus-within)::before {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 14' preserveAspectRatio='none'%3E%3Cpath fill='%23ff3b21' d='M0 7.2C14 7.2 31 5.6 48 0.6C32 9.6 15 12.6 0 12.6Z'/%3E%3C/svg%3E");
+    }
+  }
+  @media (min-width: 861px) and (prefers-reduced-motion: no-preference) {
+    .tracks :global(.track:not(.rv-fade))::before,
+    .tracks :global(.track.rv-in)::before {
+      animation: thorn-grow 900ms var(--ease-out) 150ms backwards;
+    }
+  }
+  @keyframes thorn-grow {
+    from {
+      width: 0;
+    }
+  }
+  @media (max-width: 860px) {
+    /* spacing instead of dot separators, so no line ends on an orphaned dot */
+    .m {
+      display: inline-block;
+      white-space: nowrap;
+      margin-right: 1.25em;
+    }
+    .row {
+      grid-template-columns: 1fr;
+    }
+    .pos {
+      font-size: var(--step-4);
+      margin-bottom: var(--space-2xs);
+    }
+    .summary {
+      text-align: left;
+    }
+    .tracks :global(.track-sigil) {
+      width: 4.5rem;
+    }
+  }
+  /* on phones the sigil sits beside the position number, so the text gets the full column */
+  @media (max-width: 600px) {
+    .tracks :global(li.track > div.body) {
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+    .tracks :global(li.track > div.margin) {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+    .tracks :global(li.track > div.orn) {
+      /* grid-area auto: an absolute grid child would otherwise take its grid cell as containing block */
+      grid-area: auto;
+      position: absolute;
+      top: var(--space-l);
+      right: var(--gutter);
+      width: 3rem; /* an absolute box shrinks to fit, and the SVG max-width: 100% would collapse it to 0 */
+    }
+    .tracks :global(.track-sigil) {
+      width: 3rem;
+    }
+    .pos {
+      min-height: 4.5rem;
+    }
+    .headline {
+      text-wrap: pretty;
+      max-width: none;
+    }
+  }
+</style>

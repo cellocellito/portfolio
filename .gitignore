@@ -2,3 +2,11 @@ node_modules
 dist
 .DS_Store
 *.local
+
+# Local only: design references and screenshots
+design-refs/
+qa/
+.astro
+src/assets/portrait/generated/
+test-results/
+playwright-report/

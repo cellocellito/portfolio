@@ -1,0 +1,95 @@
+/* Void Liturgy design tokens. Contrast pairs are asserted in tests/tokens.spec.ts. */
+:root {
+  /* color */
+  --bg: #080707;
+  --surface: #121010;
+  --surface-2: #1a1716;
+  --ink: #ece6dc; /* bone */
+  --soft: #bdb4a8;
+  --muted: #8f867b;
+  --line: #2b2623; /* decorative hairlines only */
+  --line-strong: #6a5e56; /* UI boundaries, >= 3:1 on bg */
+  --accent: #ff3b21; /* vermilion: rubrics, ornament rule, focus, halo dots */
+  --on-accent: #080707;
+  color-scheme: dark;
+
+  /* type */
+  --font-wordmark: 'Jacquard 24', 'Newsreader', 'Newsreader Fallback', serif;
+  --font-serif: 'Newsreader', 'Newsreader Fallback', Georgia, serif;
+  --font-mono: 'Departure Mono', 'Departure Mono Fallback', ui-monospace, Consolas, monospace;
+
+  /* Newsreader scale, fluid between 360px and 1440px viewports */
+  --step--1: 0.875rem;
+  --step-0: clamp(1.0625rem, 1.01rem + 0.23vw, 1.1875rem);
+  --step-1: clamp(1.25rem, 1.15rem + 0.45vw, 1.5rem);
+  --step-2: clamp(1.5rem, 1.33rem + 0.74vw, 2rem);
+  --step-3: clamp(1.875rem, 1.54rem + 1.48vw, 2.875rem);
+  --step-4: clamp(2.5rem, 1.9rem + 2.66vw, 4.25rem);
+  --step-5: clamp(3.25rem, 2.2rem + 4.6vw, 6.25rem);
+  /* section openers set big against the tiny mono, so the page has a real change of scale */
+  --step-6: clamp(3.75rem, 1.9rem + 8.2vw, 9.5rem);
+  /* Jacquard 24 is drawn on a 24px pixel grid: wordmark sizes stay on multiples of 24px */
+  --wordmark-xs: 24px;
+  --wordmark-s: 48px;
+  --wordmark-m: 96px;
+  --wordmark-l: 144px;
+  --wordmark-xl: 192px;
+  --wordmark-2xl: 240px;
+  /* mono */
+  --mono-s: 0.75rem;
+  --mono-m: 0.8125rem;
+  --track-mono: 0.04em;
+  --track-caps: 0.14em;
+  --lh-body: 1.55;
+  --lh-tight: 1.15;
+  --lh-display: 0.95;
+
+  /* space (rem) */
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-s: 1rem;
+  --space-m: 1.5rem;
+  --space-l: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4.5rem;
+  --space-3xl: 7rem;
+  --space-section: clamp(5rem, 3.4rem + 7vw, 10rem);
+
+  /* codex grid: a margin column for rubrics and marginalia, a text column, an ornament column */
+  --gutter: clamp(1rem, 0.6rem + 1.9vw, 2.5rem);
+  --margin-col: clamp(9rem, 4rem + 13vw, 17rem);
+  --ornament-col: 6rem;
+  --measure: 64ch;
+  --page-max: 90rem;
+  --rule: 1px;
+
+  /* motion: slow ritual for reveals, instant for focus and hover feedback */
+  --dur-instant: 0ms;
+  --dur-fast: 120ms;
+  --dur-base: 300ms;
+  --dur-reveal: 1100ms;
+  --dur-materialize: 1800ms;
+  --dur-breath: 9s;
+  --ease-ink: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --z-header: 10;
+  --z-skip: 100;
+}
+
+/* wide screens get a wider page, so 1920 is not the cramped layout with black sides */
+@media (min-width: 1600px) {
+  :root {
+    --page-max: 100rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-reveal: 0ms;
+    --dur-materialize: 0ms;
+  }
+}

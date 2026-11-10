@@ -1,0 +1,101 @@
+---
+import Base from '../layouts/Base.astro';
+import Door from '../components/Door.astro';
+import Ornament from '../components/Ornament.astro';
+import Mark from '../components/Mark.astro';
+import { en } from '../i18n/en';
+import { pt } from '../i18n/pt';
+import { localePath } from '../i18n';
+// One 404 for the whole static site (Vercel serves /404.html), so it speaks both languages.
+// Its mark is the site's one mark, with "404" printed over its lower quarter.
+---
+
+<Base locale="en" title={en.meta.notFoundTitle} description={en.notFound.text} standalone>
+  <section class="nf" aria-labelledby="nf-title">
+    <Mark locale="en" svgClass="nf-sigil" />
+    <p class="wordmark code" aria-hidden="true">
+      404
+    </p>
+    <h1 id="nf-title" class="title">
+      <span class="line">{en.notFound.title}</span>
+      <span class="line" lang="pt-BR">
+        {pt.notFound.title}
+      </span>
+    </h1>
+    <Ornament />
+    <p class="text">{en.notFound.text}</p>
+    <p class="text" lang="pt-BR">
+      {en.notFound.textPt}
+    </p>
+    <ul class="doors">
+      <li>
+        <Door href={localePath('en', '/')} kicker={en.lang.en} label={en.notFound.home} />
+      </li>
+      <li lang="pt-BR">
+        <Door href={localePath('pt', '/')} kicker={en.lang.pt} label={pt.notFound.home} />
+      </li>
+    </ul>
+  </section>
+</Base>
+
+<style>
+  /* the home's sleeve, broken. The mark at cover size in liquid chrome, with
+     "404" printed over its lower quarter the way "Cello" sits on the home sigil. */
+  .nf {
+    --sig-h: min(52svh, 30rem);
+    position: relative; /* the WebGL canvas is placed inside it */
+    display: grid;
+    justify-items: center;
+    text-align: center;
+    gap: var(--space-s);
+    padding: var(--space-xl) var(--gutter) var(--space-xl);
+  }
+  .nf :global(.nf-sigil) {
+    height: var(--sig-h);
+    width: auto;
+    color: var(--soft);
+  }
+  .code {
+    position: relative;
+    margin-top: calc(var(--sig-h) * -0.3);
+    font-size: var(--wordmark-2xl);
+    text-shadow:
+      0 0 0.08em var(--bg),
+      0 0 0.2em var(--bg);
+  }
+  .nf > :not(svg, canvas) {
+    position: relative; /* text paints above the WebGL canvas */
+  }
+  .title {
+    font-size: var(--step-3);
+    max-width: 24ch;
+  }
+  .line {
+    display: block;
+  }
+  .text {
+    font-style: italic;
+    font-size: var(--step-1);
+    color: var(--soft);
+  }
+  .doors {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-xs);
+    margin-top: var(--space-m);
+  }
+  .doors li {
+    margin: 0;
+  }
+  @media (max-width: 560px) {
+    .nf {
+      --sig-h: min(40svh, 20rem);
+    }
+    .code {
+      font-size: var(--wordmark-l);
+    }
+  }
+</style>

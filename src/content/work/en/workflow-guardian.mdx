@@ -1,0 +1,66 @@
+---
+id: A3
+side: A
+order: 3
+title: "An n8n error workflow that catches failures in other workflows, asks Gemini what went wrong, and opens a GitHub issue when it is serious."
+name: "Workflow guardian"
+org: "Personal project, open source"
+when: "Apr 2026"
+summary: "Gemini 2.5 Flash returns a structured diagnosis with severity, likely cause and a suggested fix, sent to me on WhatsApp. The same error twice in 30 minutes alerts once."
+status:
+  kind: used
+  label: "In use."
+stack: ["n8n", "Gemini 2.5 Flash", "GitHub API", "WhatsApp", "JavaScript"]
+links:
+  repo: "https://github.com/cellocellito/n8n-automation-portfolio/tree/main/01-self-healing-guardian"
+diagram:
+  nodes:
+    - { id: trigger, label: "Error Trigger (a watched workflow fails)", kind: trigger, col: 0, row: 0 }
+    - { id: norm, label: "Normalize and truncate", kind: service, col: 1, row: 0 }
+    - { id: dedup, label: "Repeat check (30 min, static data)", kind: store, col: 2, row: 0 }
+    - { id: ai, label: "Gemini 2.5 Flash, structured diagnosis", kind: model, col: 3, row: 0 }
+    - { id: drop, label: "Repeat: no alert", kind: service, col: 3, row: 1 }
+    - { id: issue, label: "GitHub issue (high or critical)", kind: channel, col: 4, row: 0 }
+    - { id: notify, label: "WhatsApp alert", kind: channel, col: 4, row: 1 }
+  edges:
+    - { from: trigger, to: norm }
+    - { from: norm, to: dedup }
+    - { from: dedup, to: ai }
+    - { from: dedup, to: drop }
+    - { from: ai, to: issue }
+    - { from: ai, to: notify }
+  confirmed: true
+draft: false
+---
+
+## Context
+
+When an n8n workflow fails, n8n marks the run as failed in the executions list and nothing else happens: no alert and no reason.
+
+My n8n runs on a Hostinger VPS, and the guardian watches every workflow on it. I built it to practice and to make my own work easier.
+
+## What I built
+
+An error workflow. Every workflow on my n8n names it as its error workflow in its settings, so a failure reaches it through n8n's Error Trigger as soon as it happens.
+
+A Code node keeps what matters: the workflow, the node that failed, the message and the stack, cut to 1,000 and 2,000 characters so a huge payload never lands in an alert. A second one keeps recent failures in the workflow's static data. The same workflow, node and message within 30 minutes counts as a repeat and stops there.
+
+A new failure goes to Gemini 2.5 Flash through a structured output parser, so the answer always has the same fields: severity, category, likely cause, whether it looks transient, and a suggested fix. The alert reaches me on WhatsApp. High and critical failures open a GitHub issue first.
+
+One of the failures it caught came from my WhatsApp assistant (A2), around its Supabase database.
+
+<Diagram graph={frontmatter.diagram} />
+
+## Decisions
+
+- **Error Trigger, not polling.** A failure arrives the moment it happens, instead of waiting for a schedule to read the executions list.
+- **A 30-minute window for repeats.** A workflow failing in a loop sends one alert, not one per run.
+- **Gemini on the free tier.** A diagnosis is a short structured answer, and the free tier handles it with no trouble.
+
+## What broke
+
+Nothing I remember. I had built a guardian before, at Solutudo, so this one worked on the first build.
+
+## Status
+
+In use on my n8n since April 2026.

@@ -1,0 +1,30 @@
+---
+// A headline with no orphans: the last word stays on the line of whatever follows it (the slot,
+// for example an arrow), and hyphenated words such as "AI-assisted" never split at the hyphen.
+interface Props {
+  text: string;
+}
+const words = Astro.props.text.split(' ');
+const last = words.pop() ?? '';
+const hyphenated = (w: string): boolean => /\S-\S/.test(w);
+---
+
+{words.map((w) =>
+  hyphenated(w) ? (
+    <>
+      <span class="nb">{w}</span>{' '}
+    </>
+  ) : (
+    `${w} `
+  ),
+)}
+<span class="nb">
+  {last}
+  <slot />
+</span>
+
+<style>
+  .nb {
+    white-space: nowrap;
+  }
+</style>

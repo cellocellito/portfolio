@@ -1,0 +1,50 @@
+---
+import Base from '../layouts/Base.astro';
+import NoteList from '../components/NoteList.astro';
+import SectionHead from '../components/SectionHead.astro';
+import { t, type Locale } from '../i18n';
+import { notes } from '../lib/content';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const s = t(locale);
+const list = await notes(locale);
+const n1Missing = !list.some((n) => n.data.id === 'N1');
+---
+
+<Base locale={locale} title={s.meta.notesTitle} description={s.meta.notesDescription} spine>
+  <div class="spine-seg">
+    <SectionHead
+      level={1}
+      kicker={s.kicker.notes}
+      meta={`${list.length} ${list.length === 1 ? s.notes.one : s.notes.many}`}
+      title={s.notes.title}
+      id="notes-title"
+      note={s.notes.intro}
+    />
+    <div class="list">
+      <NoteList entries={list} locale={locale} level={2} />
+      {n1Missing && <p class="draft mono">{s.notes.draftNote}</p>}
+    </div>
+  </div>
+</Base>
+
+<style>
+  .list {
+    margin-top: var(--space-2xl);
+  }
+  .draft {
+    max-width: var(--page-max);
+    margin: var(--space-m) auto 0;
+    padding-inline: calc(var(--gutter) * 2 + var(--margin-col));
+    color: var(--muted);
+    text-transform: none;
+  }
+  @media (max-width: 860px) {
+    .draft {
+      padding-inline: var(--gutter);
+    }
+  }
+</style>

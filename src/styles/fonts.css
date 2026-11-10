@@ -1,0 +1,73 @@
+/* Self-hosted, latin subsets. Licenses: Jacquard 24 and Newsreader SIL OFL 1.1 (Google Fonts),
+   Departure Mono MIT (public/fonts/LICENSE-departure-mono.txt). Each page preloads only the face of its LCP
+   element (Base.astro `lcpFont`): the wordmark face, or Newsreader upright on case pages. */
+@font-face {
+  font-family: 'Jacquard 24';
+  src: url('/fonts/jacquard-24-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Newsreader';
+  src: url('/fonts/newsreader-latin-wght-normal.woff2') format('woff2-variations');
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Newsreader';
+  src: url('/fonts/newsreader-latin-wght-italic.woff2') format('woff2-variations');
+  font-weight: 200 800;
+  font-style: italic;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+    U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Departure Mono';
+  src: url('/fonts/departure-mono-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+/* Metric-adjusted fallbacks so the swap does not shift the layout much (CLS). */
+@font-face {
+  /* Measured against Georgia in Edge (canvas measureText, 100px, mixed sample):
+     width ratio 0.967; Newsreader ascent 0.74, descent 0.27 → divided by size-adjust. */
+  font-family: 'Newsreader Fallback';
+  src: local('Georgia');
+  size-adjust: 96.7%;
+  ascent-override: 76.5%;
+  descent-override: 27.9%;
+  line-gap-override: 0%;
+}
+@font-face {
+  /* Phase 5: italic had no fallback, so the browser slanted Georgia regular, which is wider, and the PT
+     hero line wrapped to 3 lines before the swap and 2 after (CLS 0.039). Measured against Georgia
+     Italic the same way: width ratio 0.880; ascent 0.74 and descent 0.27 divided by size-adjust. */
+  font-family: 'Newsreader Fallback';
+  src: local('Georgia Italic'), local('Georgia-Italic');
+  font-style: italic;
+  size-adjust: 88%;
+  ascent-override: 84.1%;
+  descent-override: 30.7%;
+  line-gap-override: 0%;
+}
+@font-face {
+  /* Measured against Consolas: width ratio 1.157; ascent 1.00, descent 0.27.
+     The old guess (104%) let mono text widen on swap and rewrap the PT header (CLS 0.34). */
+  font-family: 'Departure Mono Fallback';
+  src: local('Consolas');
+  size-adjust: 115.7%;
+  ascent-override: 86.4%;
+  descent-override: 23.3%;
+  line-gap-override: 0%;
+}

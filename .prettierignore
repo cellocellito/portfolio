@@ -1,0 +1,10 @@
+dist/
+.astro/
+node_modules/
+design-refs/
+qa/
+public/
+package-lock.json
+*.md
+src/content/
+src/assets/

@@ -1,0 +1,66 @@
+---
+id: A3
+side: A
+order: 3
+title: "Um workflow de erro no n8n que pega as falhas dos outros, pergunta ao Gemini o que deu errado e abre uma issue no GitHub quando é grave."
+name: "Guardião de workflows"
+org: "Projeto pessoal, open source"
+when: "abr. de 2026"
+summary: "O Gemini 2.5 Flash devolve um diagnóstico estruturado com severidade, causa provável e uma sugestão de correção, que chega no meu WhatsApp. O mesmo erro duas vezes em 30 minutos gera um alerta só."
+status:
+  kind: used
+  label: "Em uso."
+stack: ["n8n", "Gemini 2.5 Flash", "GitHub API", "WhatsApp", "JavaScript"]
+links:
+  repo: "https://github.com/cellocellito/n8n-automation-portfolio/tree/main/01-self-healing-guardian"
+diagram:
+  nodes:
+    - { id: trigger, label: "Error Trigger (um workflow vigiado falha)", kind: trigger, col: 0, row: 0 }
+    - { id: norm, label: "Normaliza e corta", kind: service, col: 1, row: 0 }
+    - { id: dedup, label: "Checagem de repetição (30 min, static data)", kind: store, col: 2, row: 0 }
+    - { id: ai, label: "Gemini 2.5 Flash, diagnóstico estruturado", kind: model, col: 3, row: 0 }
+    - { id: drop, label: "Repetição: sem alerta", kind: service, col: 3, row: 1 }
+    - { id: issue, label: "Issue no GitHub (alta ou crítica)", kind: channel, col: 4, row: 0 }
+    - { id: notify, label: "Alerta no WhatsApp", kind: channel, col: 4, row: 1 }
+  edges:
+    - { from: trigger, to: norm }
+    - { from: norm, to: dedup }
+    - { from: dedup, to: ai }
+    - { from: dedup, to: drop }
+    - { from: ai, to: issue }
+    - { from: ai, to: notify }
+  confirmed: true
+draft: false
+---
+
+## Contexto
+
+Quando um workflow do n8n falha, o n8n marca a execução como falha na lista de execuções e mais nada acontece: nenhum aviso e nenhum motivo.
+
+O meu n8n roda numa VPS da Hostinger, e o guardião vigia todos os workflows dele. Construí para praticar e para facilitar o meu próprio trabalho.
+
+## O que construí
+
+Um workflow de erro. Cada workflow do meu n8n aponta para ele como workflow de erro nas configurações, então uma falha chega até ele pelo Error Trigger do n8n assim que acontece.
+
+Um nó de código guarda o que importa: o workflow, o nó que falhou, a mensagem e o stack, cortados em 1.000 e 2.000 caracteres para que um payload enorme nunca vá parar num alerta. Um segundo guarda as falhas recentes no static data do workflow. O mesmo workflow, nó e mensagem dentro de 30 minutos conta como repetição e para ali.
+
+Uma falha nova vai para o Gemini 2.5 Flash por um output parser estruturado, então a resposta sempre tem os mesmos campos: severidade, categoria, causa provável, se parece transitória, e uma sugestão de correção. O alerta chega no meu WhatsApp. Falhas de severidade alta e crítica abrem uma issue no GitHub antes.
+
+Uma das falhas que ele pegou veio do meu assistente no WhatsApp (A2), ligada ao banco de dados no Supabase.
+
+<Diagram graph={frontmatter.diagram} />
+
+## Decisões
+
+- **Error Trigger, sem polling.** A falha chega na hora em que acontece, em vez de esperar um agendamento ler a lista de execuções.
+- **Uma janela de 30 minutos para repetições.** Um workflow falhando em loop manda um alerta, não um por execução.
+- **Gemini no plano gratuito.** Um diagnóstico é uma resposta curta e estruturada, e o plano gratuito dá conta sem problema.
+
+## O que quebrou
+
+Nada de que eu me lembre. Eu já tinha construído um guardião antes, na Solutudo, então este funcionou de primeira.
+
+## Status
+
+Em uso no meu n8n desde abril de 2026.

@@ -1,0 +1,71 @@
+---
+// The diagram as a nested list: each part, then the parts it feeds. Recursive through Astro.self.
+import type { TreeItem } from '../lib/diagram';
+
+interface Props {
+  items: TreeItem[];
+  seeAbove: string;
+  kinds: Record<string, string>;
+}
+const { items, seeAbove, kinds } = Astro.props;
+---
+
+<ul class="tree">
+  {items.map((it) => (
+    <li>
+      <span class:list={['part', { ref: it.ref }]}>
+        <span class="kind">{kinds[it.kind]}</span>
+        <span class="label">{it.label}</span>
+        {it.ref && <span class="see">({seeAbove})</span>}
+      </span>
+      {it.children.length > 0 && <Astro.self items={it.children} seeAbove={seeAbove} kinds={kinds} />}
+    </li>
+  ))}
+</ul>
+
+<style>
+  .tree {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .tree .tree {
+    margin-left: 0.6rem;
+    padding-left: var(--space-s);
+    border-left: var(--rule) solid var(--line-strong);
+  }
+  li {
+    margin: 0;
+  }
+  li + li {
+    margin-top: 0;
+  }
+  .part {
+    display: grid;
+    gap: 0.1rem;
+    padding-block: 0.3rem;
+    position: relative;
+  }
+  .tree .tree .part::before {
+    content: '';
+    position: absolute;
+    left: calc(-1 * var(--space-s));
+    top: 1.55rem;
+    width: calc(var(--space-s) - 0.3rem);
+    border-top: var(--rule) solid var(--line-strong);
+  }
+  .kind {
+    font-family: var(--font-mono);
+    font-size: var(--mono-s);
+    letter-spacing: var(--track-mono);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .label {
+    color: var(--ink);
+  }
+  .see {
+    color: var(--muted);
+    font-style: italic;
+  }
+</style>

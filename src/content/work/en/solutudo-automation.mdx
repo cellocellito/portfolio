@@ -1,0 +1,65 @@
+---
+id: A1
+side: A
+order: 1
+title: "20+ n8n workflows that took about 6 hours a day of manual work off Solutudo's support and back office."
+name: "Automation at Solutudo Brasil"
+org: "Solutudo Brasil, Botucatu"
+role: "Automation Developer"
+when: "Jan–Jun 2026"
+summary: "Instagram comment-to-DM, WhatsApp support on OpenAI and Gemini, and back-office integrations over REST and SQL."
+status:
+  kind: past-role
+  label: "Past role."
+stack: ["n8n", "OpenAI", "Gemini", "Meta Graph API", "Evolution API", "REST APIs", "SQL", "Redis"]
+diagram:
+  nodes:
+    - { id: ig, label: "Instagram comments", kind: trigger, col: 0, row: 0 }
+    - { id: wa, label: "WhatsApp", kind: channel, col: 0, row: 1 }
+    - { id: n8n, label: "n8n (20+ workflows)", kind: service, col: 1, row: 0 }
+    - { id: llm, label: "OpenAI / Gemini", kind: model, col: 2, row: 0 }
+    - { id: meta, label: "Meta Graph API", kind: service, col: 2, row: 1 }
+    - { id: evo, label: "Evolution API", kind: service, col: 2, row: 2 }
+    - { id: redis, label: "Redis", kind: store, col: 2, row: 3 }
+    - { id: sql, label: "REST + SQL back office", kind: store, col: 2, row: 4 }
+  edges:
+    - { from: ig, to: n8n }
+    - { from: wa, to: n8n }
+    - { from: n8n, to: llm }
+    - { from: n8n, to: meta }
+    - { from: n8n, to: evo }
+    - { from: n8n, to: redis }
+    - { from: n8n, to: sql }
+  confirmed: true
+draft: false
+---
+
+## Context
+
+Customer service and the back office at Solutudo Brasil handled part of their daily work by hand. I joined as an automation developer in January 2026.
+
+## What I built
+
+Over six months I built more than 20 n8n workflows that ran in production. Together they removed about 6 hours a day of manual work: roughly 4 in customer service and 2 in the back office.
+
+- An Instagram pipeline that turns a comment into a direct message.
+- WhatsApp support automation on OpenAI and Gemini, wired through the Meta Graph API and Evolution API.
+- Back-office integrations over REST APIs and SQL, with Redis in the stack.
+- Prompt engineering for B2B accounts, and troubleshooting whenever an integration became the bottleneck.
+- A dashboard that showed every running automation, working next to a workflow guardian that reported failures.
+
+<Diagram graph={frontmatter.diagram} />
+
+## Decisions
+
+- **n8n instead of custom code.** Problems are easier to diagnose in n8n, and the flows are easier to maintain.
+- **Two model providers.** To save money: Gemini's free tier handled the basic tasks and OpenAI the more complex ones.
+- **Evolution API next to the Meta Graph API.** Meta's API ran Solutudo's own WhatsApp and Instagram automations, clients' Instagram accounts included. Evolution API ran the WhatsApp automations we built for clients.
+
+## What broke
+
+While I was testing a WhatsApp automation for Solutudo, it sent a message to about 20 contacts in one second. I corrected the flow, and it never happened again.
+
+## Status
+
+Past role. I worked at Solutudo from January to June 2026.

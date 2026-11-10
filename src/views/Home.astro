@@ -1,0 +1,490 @@
+---
+import Base from '../layouts/Base.astro';
+import Door from '../components/Door.astro';
+import Leaf from '../components/Leaf.astro';
+import Mark from '../components/Mark.astro';
+import Ornament from '../components/Ornament.astro';
+import SectionHead from '../components/SectionHead.astro';
+import NoteList from '../components/NoteList.astro';
+import Skills from '../components/Skills.astro';
+import TrackList from '../components/TrackList.astro';
+import { localePath, t, type Locale } from '../i18n';
+import { profile } from '../data/profile';
+import { NOTES_PUBLISHED, notes, works } from '../lib/content';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const s = t(locale);
+const p = profile(locale);
+const all = await works(locale);
+const sideA = all.filter((e) => e.data.side === 'A');
+const sideB = all.filter((e) => e.data.side === 'B');
+const allNotes = NOTES_PUBLISHED ? await notes(locale) : [];
+const latestNotes = allNotes.slice(0, 3);
+const count = (n: number): string => `${n} ${s.home.tracks}`;
+// JSON-LD Person: profile facts only, skills from the Strong level only.
+const site = Astro.site ?? new URL('https://portfolio-marcelo-mocha.vercel.app');
+const person = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: p.name,
+  alternateName: p.nickname,
+  url: new URL(locale === 'pt' ? '/pt' : '/', site).href,
+  email: `mailto:${p.email}`,
+  address: { '@type': 'PostalAddress', addressLocality: 'Botucatu', addressRegion: 'SP', addressCountry: 'BR' },
+  alumniOf: { '@type': 'CollegeOrUniversity', name: 'FATEC Botucatu' },
+  sameAs: [p.links.github, p.links.linkedin],
+  knowsAbout: [...p.skills.strong],
+};
+---
+
+<Base locale={locale} title={s.meta.homeTitle} description={s.meta.homeDescription} jsonLd={person} ogType="profile" spine>
+  <section class="title-page" aria-labelledby="hero-title">
+    <div class="tp-margin tp-left mono">
+      <p class="rubric">{s.about.facts}</p>
+      {/* the date range in parentheses never breaks across lines */}
+      <p class="tp-mfact">
+        {s.hero.fact.split(/(\([^)]*\)\.?)/).map((part) => (part.startsWith('(') ? <span class="nowrap">{part}</span> : part))}
+      </p>
+      {/* short comma-separated parts ("São Paulo", "FATEC Botucatu") never break inside */}
+      <ul>
+        {[p.location, p.remote, p.english, p.degree].map((fact) => (
+          <li>{fact.split(/(, )/).map((x) => (x !== ', ' && x.length < 19 ? <span class="nowrap">{x}</span> : x))}</li>
+        ))}
+      </ul>
+    </div>
+
+    {/* Layout C: the mark on the left, the whole title block on the right */}
+    <div class="tp-center">
+      <Mark locale={locale} class="tp-sigil-wrap" svgClass="tp-sigil" />
+      <div class="tp-text">
+        <h1 id="hero-title" class="tp-title">
+          <span class="wordmark tp-word">{p.nickname}</span>
+          <span class="small-caps tp-name">{p.name}</span>
+        </h1>
+        <Ornament class="tp-orn" />
+        <p class="tp-lede">
+          {s.hero.lede.split(/(?<=\.)\s+/).map((line) => (
+            <span class="tp-line">{line}</span>
+          ))}
+        </p>
+        <p class="tp-fact">{s.hero.fact}</p>
+        <div class="tp-cta">
+          <ul class="tp-doors">
+            <li>
+              <Door href="#side-a" kicker={s.kicker.sideA} label={s.hero.toSideA} />
+            </li>
+            <li>
+              <Door href="#side-b" kicker={s.kicker.sideB} label={s.hero.toSideB} />
+            </li>
+          </ul>
+          <ul class="tp-contact mono">
+            <li>
+              <a href={p.cv}>{s.contact.cv}</a>
+            </li>
+            <li>
+              <a href={`mailto:${p.email}`}>{p.email}</a>
+            </li>
+          </ul>
+        </div>
+        {/* the sleeve's small print, under the doors: contents, contact, what the mark is */}
+        <div class="tp-meta mono">
+          <p class="rubric">{s.hero.contents}</p>
+          <ul>
+            <li>
+              <a href="#side-a">{s.kicker.sideA}</a> · {count(sideA.length)}
+            </li>
+            <li>
+              <a href="#side-b">{s.kicker.sideB}</a> · {count(sideB.length)}
+            </li>
+            {NOTES_PUBLISHED && (
+              <li>
+                <a href="#notes">{s.kicker.notes}</a> · {allNotes.length} {allNotes.length === 1 ? s.notes.one : s.notes.many}
+              </li>
+            )}
+          </ul>
+          <div class="tp-mcontact">
+            <p class="rubric">{s.home.contactTitle}</p>
+            <ul>
+              <li>
+                <a href={p.cv}>{s.contact.cv}</a>
+              </li>
+              <li>
+                <a href={`mailto:${p.email}`}>{p.email}</a>
+              </li>
+            </ul>
+          </div>
+          <p class="tp-sigil-note">{s.hero.sigil}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  {/* the dither band: printed, then live (src/scripts/band.ts); it sits in the gap above Side A */}
+  <div class="dband" aria-hidden="true"></div>
+
+  <section id="side-a" class="side spine-seg" aria-labelledby="side-a-title">
+    <SectionHead kicker={s.kicker.sideA} meta={count(sideA.length)} title={s.sides.A} id="side-a-title" />
+    <TrackList entries={sideA} locale={locale} />
+  </section>
+
+  <section id="side-b" class="side spine-seg" aria-labelledby="side-b-title">
+    <SectionHead kicker={s.kicker.sideB} meta={count(sideB.length)} title={s.sides.B} id="side-b-title" />
+    <TrackList entries={sideB} locale={locale} />
+  </section>
+
+  <section id="stack" class="side spine-seg" aria-labelledby="stack-title">
+    <SectionHead kicker={s.home.stackTitle} title={s.home.toolsTitle} id="stack-title" />
+    <Leaf ruled reveal>
+      <Skills locale={locale} />
+    </Leaf>
+  </section>
+
+  {NOTES_PUBLISHED && (
+    <section id="notes" class="side spine-seg" aria-labelledby="notes-title">
+      <SectionHead
+        kicker={s.kicker.notes}
+        meta={`${allNotes.length} ${allNotes.length === 1 ? s.notes.one : s.notes.many}`}
+        title={s.home.notesTitle}
+        id="notes-title"
+      />
+      <NoteList entries={latestNotes} locale={locale} />
+      <Leaf>
+        <p class="all mono">
+          <a href={localePath(locale, '/notes')}>{s.home.allNotes}</a>
+        </p>
+      </Leaf>
+    </section>
+  )}
+</Base>
+
+<style>
+  /* Title page: facts in the margin | the mark, and beside it the whole title block
+     with the doors and the sleeve's small print. Below 1100px it stacks: the mark, the name printed over its
+     lower quarter, the lede, the doors, the facts. */
+  .title-page {
+    --sig-h: min(72svh, 54rem);
+    display: grid;
+    grid-template-columns: var(--margin-col) minmax(0, 1fr);
+    column-gap: var(--gutter);
+    align-items: center;
+    max-width: var(--page-max);
+    margin-inline: auto;
+    padding: var(--space-s) var(--gutter) var(--space-xl);
+    min-height: calc(100svh - 4.5rem);
+  }
+  .tp-center {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: clamp(1.5rem, 3.5vw, 4rem);
+    align-items: center;
+    justify-items: start;
+  }
+  .tp-center :global(.tp-sigil) {
+    height: var(--sig-h);
+    width: auto;
+    color: var(--ink);
+  }
+  /* the title comes later in the DOM than the WebGL canvas, and is positioned, so it paints above it */
+  .tp-text {
+    position: relative;
+    display: grid;
+    justify-items: start;
+    align-content: center;
+  }
+  .tp-title {
+    position: relative;
+    display: grid;
+    justify-items: start;
+    gap: var(--space-xs);
+    font-size: inherit;
+    font-weight: 400;
+  }
+  .tp-word {
+    font-size: var(--wordmark-xl);
+    text-shadow:
+      0 0 0.08em var(--bg),
+      0 0 0.2em var(--bg);
+  }
+  .tp-name {
+    font-family: var(--font-serif);
+    font-size: var(--step-2);
+    color: var(--soft);
+    line-height: 1.1;
+  }
+  .tp-text :global(.tp-orn) {
+    margin: var(--space-m) auto var(--space-s) 0;
+  }
+  /* one sentence per line, so the next sentence's first word never ends a line; layout C: the lede
+     upright and larger, the second sentence a step quieter */
+  .tp-line {
+    display: block;
+    text-wrap: balance;
+  }
+  .tp-line + .tp-line {
+    color: var(--soft);
+  }
+  .tp-lede {
+    font-weight: 500;
+    font-size: clamp(1.6rem, 0.9rem + 1.6vw, 2.4rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    max-width: none;
+    color: var(--ink);
+  }
+  /* 52ch: two balanced lines in EN and PT with either the fallback or Newsreader, so the font swap never
+     changes the line count (it did in PT at 64ch: CLS 0.039) */
+  .tp-fact {
+    margin-top: var(--space-xs);
+    color: var(--soft);
+    max-width: 52ch;
+    text-wrap: balance;
+  }
+  .tp-cta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: var(--space-xs) var(--space-l);
+    margin-top: var(--space-l);
+  }
+  .tp-doors,
+  .tp-contact {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .tp-doors li,
+  .tp-contact li {
+    margin: 0;
+  }
+  .tp-doors {
+    gap: var(--space-xs);
+  }
+  .tp-contact {
+    gap: 0 var(--space-m);
+  }
+  .tp-contact a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    text-transform: none;
+  }
+  /* the small print: contents | contact | what the mark is */
+  .tp-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, auto));
+    gap: 0 clamp(1.5rem, 3vw, 3rem);
+    margin-top: var(--space-xl);
+    padding-top: var(--space-s);
+    border-top: var(--rule) solid var(--line);
+    font-size: 0.8125rem;
+    color: var(--soft);
+  }
+  .tp-meta > .rubric {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .tp-meta > ul {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .tp-meta ul {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-2xs) 0 0;
+  }
+  .tp-meta li + li {
+    margin-top: var(--space-2xs);
+  }
+  .tp-meta a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-block: -0.6rem;
+  }
+  .tp-mcontact {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+  .tp-mcontact a {
+    text-transform: none;
+  }
+  /* the address at the small mono size, or it runs into the next column */
+  .tp-mcontact li:last-child a {
+    font-size: var(--mono-s);
+  }
+  .tp-sigil-note {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    max-width: 24ch;
+    color: var(--muted);
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: var(--step--1);
+    line-height: 1.45;
+  }
+  /* the margin reads like sleeve print: facts in the bottom-left corner */
+  .tp-margin {
+    align-self: end;
+    padding-bottom: var(--space-s);
+  }
+  .tp-margin ul {
+    list-style: none;
+    padding: 0;
+    margin-top: var(--space-2xs);
+  }
+  .tp-margin li + li {
+    margin-top: var(--space-2xs);
+  }
+  /* the hiring facts at the margin's reading size */
+  .tp-margin.mono {
+    font-size: 0.875rem;
+  }
+  .tp-margin li {
+    color: var(--ink);
+  }
+  .tp-mfact {
+    margin-top: var(--space-2xs);
+    margin-bottom: var(--space-s);
+    color: var(--ink);
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: var(--font-serif);
+    font-size: var(--step-0);
+    line-height: 1.4;
+    max-width: none;
+    text-wrap: balance;
+  }
+  @media (min-width: 1101px) {
+    .tp-text .tp-fact,
+    .tp-text .tp-contact {
+      display: none;
+    }
+  }
+  .nowrap {
+    white-space: nowrap;
+  }
+  .tp-left {
+    text-align: right;
+    padding-right: var(--space-s);
+    border-right: var(--rule) solid var(--line);
+  }
+
+  .side {
+    margin-top: var(--space-section);
+  }
+  /* The spine: the codex gutter rule runs down the whole record as one line; each section hangs a
+     node on it and each track a thorn (TrackList). Wide screens only. */
+  .side {
+    --spine-top: calc(-1 * var(--space-section)); /* the line bridges the gap above each section */
+  }
+  @media (min-width: 1101px) {
+    .title-page {
+      position: relative;
+    }
+    .title-page::before {
+      content: '';
+      position: absolute;
+      top: var(--space-xl);
+      bottom: 0;
+      left: calc(var(--gutter) + var(--margin-col) - var(--rule));
+      width: var(--rule);
+      background: linear-gradient(to bottom, transparent, var(--line-strong) 30%);
+      pointer-events: none;
+    }
+    .tp-left {
+      border-right-color: transparent;
+    }
+  }
+  .all {
+    margin-top: var(--space-m);
+  }
+  .all a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  @media (max-width: 1100px) {
+    .title-page {
+      --sig-h: min(58svh, 38rem);
+      grid-template-columns: minmax(0, 1fr);
+      min-height: 0;
+      padding-top: var(--space-xl);
+    }
+    .tp-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .tp-text {
+      justify-items: center;
+      text-align: center;
+    }
+    .tp-title {
+      justify-items: center;
+      margin-top: calc(var(--sig-h) * -0.25); /* the name printed over the mark's lower quarter */
+    }
+    .tp-text :global(.tp-orn) {
+      margin: var(--space-s) auto var(--space-xs);
+    }
+    .tp-cta {
+      justify-content: center;
+      margin-top: var(--space-m);
+    }
+    .tp-doors,
+    .tp-contact {
+      justify-content: center;
+    }
+    .tp-meta {
+      display: block;
+      border-top: 0;
+      margin-top: 0;
+    }
+    .tp-meta > .rubric,
+    .tp-meta > ul,
+    .tp-mcontact,
+    .tp-mfact {
+      display: none;
+    }
+    /* the caption closes the hero on narrow screens, so the headline is read before a footnote */
+    .tp-sigil-note {
+      margin: var(--space-s) auto 0;
+      max-width: 40ch;
+    }
+    .tp-left {
+      order: 2;
+      text-align: center;
+      border-right: 0;
+      padding: var(--space-l) 0 0;
+    }
+    .tp-left ul {
+      display: grid;
+      gap: var(--space-3xs);
+    }
+    .tp-left li + li {
+      margin-top: 0;
+    }
+    .tp-left .rubric {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+  }
+  @media (max-width: 560px) {
+    .tp-word {
+      font-size: var(--wordmark-l);
+    }
+    .title-page {
+      --sig-h: min(40svh, 20rem);
+    }
+  }
+</style>

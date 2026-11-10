@@ -1,0 +1,37 @@
+---
+id: B3
+side: B
+order: 3
+title: "Um gerenciador de tarefas Kanban em React e SQL, com contas próprias, que substituiu as planilhas de Excel da Solutudo."
+name: "Gerenciador de tarefas interno"
+org: "Solutudo Brasil, Botucatu"
+when: "2026"
+summary: "As tarefas são acompanhadas por responsável no quadro."
+status:
+  kind: shipped
+  label: "Substituiu as planilhas de Excel."
+stack: ["React", "SQL"]
+mock: true
+draft: false
+---
+
+## Contexto
+
+As tarefas da Solutudo viviam em planilhas de Excel. Era um sistema desatualizado, e eu gosto de pegar um sistema velho e deixar melhor.
+
+## O que construí
+
+Um app web interno em React com banco SQL: contas de usuário próprias, tarefas por responsável e um quadro Kanban. Não posso mostrar o sistema real. Qualquer tela dele neste site é recriada com dados falsos.
+
+## Decisões
+
+- **Um quadro Kanban.** O Excel não tinha visão Kanban, então uma tarefa não tinha como passar de uma coluna para a outra.
+- **Contas pessoais em vez de um login compartilhado.** Cada pessoa entra com a própria conta, então toda tarefa tem um dono.
+
+## O que quebrou
+
+O que eu lembro de ter quebrado é a integração com as planilhas de Excel antigas.
+
+## Status
+
+Substituiu as planilhas de Excel, e até onde eu sei continua em uso.

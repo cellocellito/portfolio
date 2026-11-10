@@ -1,0 +1,65 @@
+---
+id: A2
+side: A
+order: 2
+title: "Um assistente no WhatsApp cujo roteador passa os pedidos para especialistas em Gmail, Agenda e Notion, e lembra das coisas pelo Qdrant."
+name: "Assistente de IA no WhatsApp"
+org: "FATEC Botucatu, TCC"
+when: "jan. de 2026"
+summary: "Um agente roteador no GPT-5-mini, Whisper para áudios e busca na web, feito com n8n, Supabase e Redis e auto-hospedado com Docker."
+status:
+  kind: used
+  label: "Construído como meu TCC. Uso todo dia."
+stack: ["n8n", "GPT-5-mini", "Whisper", "Qdrant", "Supabase", "Redis", "Docker", "Evolution API", "Gmail", "Google Agenda", "Notion"]
+diagram:
+  nodes:
+    - { id: wa, label: "WhatsApp (Evolution API)", kind: channel, col: 0, row: 0 }
+    - { id: n8n, label: "n8n (orquestração)", kind: service, col: 1, row: 0 }
+    - { id: whisper, label: "Whisper (áudios)", kind: model, col: 2, row: 1 }
+    - { id: router, label: "Agente roteador (GPT-5-mini)", kind: model, col: 2, row: 0 }
+    - { id: gmail, label: "Especialista em Gmail", kind: service, col: 3, row: 0 }
+    - { id: gcal, label: "Especialista em Agenda", kind: service, col: 3, row: 1 }
+    - { id: notion, label: "Especialista em finanças (Notion)", kind: service, col: 3, row: 2 }
+    - { id: search, label: "Busca na web", kind: service, col: 3, row: 3 }
+    - { id: qdrant, label: "Qdrant (memória de longo prazo)", kind: store, col: 3, row: 4 }
+    - { id: supa, label: "Supabase", kind: store, col: 2, row: 2 }
+    - { id: redis, label: "Redis", kind: store, col: 2, row: 3 }
+  edges:
+    - { from: wa, to: n8n }
+    - { from: n8n, to: whisper }
+    - { from: n8n, to: router }
+    - { from: router, to: gmail }
+    - { from: router, to: gcal }
+    - { from: router, to: notion }
+    - { from: router, to: search }
+    - { from: router, to: qdrant }
+    - { from: n8n, to: supa }
+    - { from: n8n, to: redis }
+  confirmed: true
+draft: false
+---
+
+## Contexto
+
+É o meu TCC de Análise e Desenvolvimento de Sistemas na FATEC Botucatu: uma conversa no WhatsApp na frente de três especialistas, um para o Gmail, um para o Google Agenda e um para um controle financeiro no Notion.
+
+Escolhi esses três porque todos têm APIs gratuitas, e o WhatsApp se conecta pela Evolution API.
+
+## O que construí
+
+Um agente roteador lê cada mensagem e passa o pedido para um especialista: um para o Gmail, um para o Google Agenda, um para o controle financeiro no Notion. Áudios passam antes pelo Whisper. A memória de longo prazo fica no Qdrant, e o agente pode buscar na web quando precisa de algo atual. O n8n orquestra tudo, com Supabase e Redis, auto-hospedado com Docker. O modelo é o GPT-5-mini.
+
+<Diagram graph={frontmatter.diagram} />
+
+## Decisões
+
+- **Um roteador na frente de especialistas, em vez de um agente com todas as ferramentas.** Dividir o trabalho evita sobrecarregar um agente só, e as tarefas saem melhores assim.
+- **Auto-hospedado com Docker.** Não custa nada, e rodar eu mesmo é prática.
+
+## O que quebrou
+
+O que eu lembro de ter quebrado é o jeito como a personalidade do assistente era injetada a partir do Supabase. Mudei essa parte depois.
+
+## Status
+
+Construído como meu TCC. Uso todo dia.

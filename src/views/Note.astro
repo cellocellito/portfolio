@@ -1,0 +1,218 @@
+---
+import { render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Leaf from '../components/Leaf.astro';
+import Sigil from '../components/Sigil.astro';
+import StatusTag from '../components/StatusTag.astro';
+import { localePath, t, type Locale } from '../i18n';
+import type { Note } from '../lib/content';
+import { noteGraph } from '../lib/sigil/graphs';
+
+interface Props {
+  entry: Note;
+  locale: Locale;
+}
+const { entry, locale } = Astro.props;
+const s = t(locale);
+const d = entry.data;
+const { Content } = await render(entry);
+const tone = d.status === 'open' ? 'open' : d.status === 'fixed' ? 'done' : 'neutral';
+---
+
+<Base locale={locale} title={`${d.title} · ${s.meta.siteName}`} description={d.summary} ogType="article" spine>
+  <article class="note spine-seg">
+    <Leaf class="head">
+      <div slot="margin" class="head-margin">
+        <span class="rubric">{s.kicker.notes}</span>
+        <span class="id">{d.id}</span>
+      </div>
+      <Sigil slot="ornament" graph={noteGraph(entry)} seedKey={d.id} weight={1.1} class="note-sigil" gl />
+      <h1 class="title">{d.title}</h1>
+      <dl class="facts">
+        <div>
+          <dt>{s.work.status}</dt>
+          <dd>
+            <StatusTag label={s.notes.status[d.status]} tone={tone} />
+          </dd>
+        </div>
+        {d.date && (
+          <div>
+            <dt>{s.notes.date}</dt>
+            <dd>{d.date}</dd>
+          </div>
+        )}
+        <div>
+          <dt>{s.notes.stack}</dt>
+          <dd>{d.stack.join(' · ')}</dd>
+        </div>
+      </dl>
+    </Leaf>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    <Leaf ruled class="back">
+      <a href={localePath(locale, '/notes')} class="mono">
+        {s.notes.back}
+      </a>
+    </Leaf>
+  </article>
+</Base>
+
+<style>
+  /* Cover: the note's own sigil at cover size, in liquid chrome like the cases */
+  .note :global(.head) {
+    --ornament-col: auto;
+    padding-top: var(--space-xl);
+    align-items: center;
+  }
+  .note :global(.head .orn) {
+    position: relative; /* the WebGL canvas is placed inside it */
+  }
+  .head-margin {
+    display: grid;
+    justify-items: end;
+    gap: var(--space-2xs);
+  }
+  .note :global(.note-sigil) {
+    height: min(56svh, 32rem);
+    width: auto;
+  }
+  @media (max-width: 860px) {
+    .note :global(.head .orn) {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      justify-self: center;
+    }
+    .note :global(.head .margin) {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+    .note :global(.head .body) {
+      grid-column: 1 / -1;
+      grid-row: 3;
+    }
+    .note :global(.note-sigil) {
+      height: min(42svh, 22rem);
+    }
+  }
+  .id {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: var(--step-4);
+    line-height: 0.9;
+    color: var(--accent);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .title {
+    font-size: var(--step-4);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    max-width: 20ch;
+  }
+  .lede {
+    margin-top: var(--space-m);
+    font-size: var(--step-1);
+    font-style: italic;
+    color: var(--soft);
+    line-height: 1.4;
+  }
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-s) var(--space-xl);
+    margin-top: var(--space-l);
+  }
+  .facts dt {
+    font-family: var(--font-mono);
+    font-size: var(--mono-s);
+    letter-spacing: var(--track-mono);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .facts dd {
+    margin-top: var(--space-3xs);
+  }
+
+  .prose {
+    display: grid;
+    grid-template-columns: var(--margin-col) minmax(0, 1fr);
+    column-gap: var(--gutter);
+    padding-inline: var(--gutter);
+    max-width: var(--page-max);
+    margin: var(--space-xl) auto 0;
+  }
+  .prose > :global(*) {
+    grid-column: 2;
+    margin-top: var(--space-s);
+    color: var(--soft);
+  }
+  .prose > :global(h2) {
+    position: relative;
+    grid-column: 1;
+    text-align: right;
+    padding-right: var(--space-s);
+    border-right: var(--rule) solid var(--line);
+    font-size: var(--step-2);
+    font-style: italic;
+    line-height: 1.15;
+    color: var(--ink);
+    align-self: stretch;
+  }
+  :global(.has-spine) .prose > :global(h2) {
+    border-right-color: transparent;
+  }
+  @media (min-width: 861px) {
+    :global(.has-spine) .prose > :global(h2)::after {
+      content: '';
+      position: absolute;
+      top: 0.55rem;
+      right: -0.3rem;
+      width: 0.6rem;
+      height: 0.6rem;
+      border: var(--rule) solid var(--accent);
+      background: var(--bg);
+      transform: rotate(45deg);
+    }
+  }
+  .prose > :global(h2),
+  .prose > :global(h2 + *) {
+    margin-top: var(--space-xl);
+  }
+  .prose > :global(h2:first-child),
+  .prose > :global(h2:first-child + *) {
+    margin-top: 0;
+  }
+  .note :global(.back) {
+    margin-top: var(--space-2xl);
+  }
+  .note :global(.back) a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  @media (max-width: 860px) {
+    .head-margin {
+      display: flex;
+      align-items: baseline;
+      justify-items: start;
+      gap: var(--space-s);
+    }
+    .prose {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .prose > :global(*) {
+      grid-column: 1;
+    }
+    .prose > :global(h2) {
+      text-align: left;
+      border-right: 0;
+      padding-right: 0;
+    }
+    .prose > :global(h2 + *) {
+      margin-top: var(--space-xs);
+    }
+  }
+</style>

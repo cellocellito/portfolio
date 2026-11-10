@@ -1,0 +1,37 @@
+---
+id: B5
+side: B
+order: 5
+title: "Este site: um disco com dois lados, feito com spec antes do código, onde toda afirmação precisa voltar a um fato."
+name: "Este site"
+org: "Projeto pessoal"
+when: "2026"
+summary: "Astro estático e TypeScript, com cada projeto em inglês e português."
+status:
+  kind: live
+  label: "No ar."
+stack: ["Astro", "TypeScript", "MDX"]
+draft: false
+---
+
+## Contexto
+
+O meu portfólio anterior era uma página só, fantasiada de terminal ("CELLO.SYS"), com um contador de visitas que não contava nada e um letreiro de logs cheio de piadas. Este site substitui aquele.
+
+## O que construí
+
+A estrutura é um disco. O Lado A é automação e IA, o Lado B é full-stack e web. Mandei prototipar duas direções de arte, Test Pressing e Void Liturgy, e escolhi a Void Liturgy.
+
+O site tem uma marca só, gerada no build a partir da minha lista de projetos: cada par de raios é um projeto. Apontar ou tocar num raio mostra o nome do projeto, e clicar abre o caso. O topo de cada caso mostra a mesma marca, com os raios daquele projeto em vermelho.
+
+Na página inicial, no topo de cada caso e na página 404, a marca é desenhada em WebGL como cromo líquido que escorre de cima para baixo, depois do primeiro movimento, toque, rolagem ou tecla do visitante, ou alguns segundos depois de carregar. O reflexo acompanha o ponteiro. Com movimento reduzido, economia de dados, sem WebGL2 ou numa placa de vídeo sem ponto flutuante de alta precisão, ela fica como um desenho plano.
+
+As páginas trocam com uma cortina pontilhada, e no computador um pontilhado discreto segue o ponteiro.
+
+É Astro estático e TypeScript, sem framework de UI: o JavaScript roda só o movimento e a marca em WebGL. Cada projeto é um arquivo MDX em inglês e em português, validado por um schema, e o build falha se faltar um idioma.
+
+O site define uma Content Security Policy rígida, sem scripts inline, e não carrega scripts, fontes nem arquivos de terceiros.
+
+## Status
+
+No ar. Adicionar ou tirar um projeto redesenha a marca no próximo build.

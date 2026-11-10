@@ -1,0 +1,83 @@
+---
+// Section opener on the codex grid: rubric + count in the margin, title in the column.
+import Leaf from './Leaf.astro';
+interface Props {
+  kicker: string;
+  meta?: string;
+  title: string;
+  id: string;
+  note?: string;
+  level?: 1 | 2;
+}
+const { kicker, meta, title, id, note, level = 2 } = Astro.props;
+const H = level === 1 ? 'h1' : 'h2';
+---
+
+<Leaf class:list={['section-head', { lvl1: level === 1 }]} reveal={level !== 1}>
+  <Fragment slot="margin">
+    <span class="rubric">{kicker}</span>
+    {meta && (
+      <>
+        <br />
+        {meta}
+      </>
+    )}
+  </Fragment>
+  <H id={id} class="title">
+    {title}
+  </H>
+  {note && <p class="note">{note}</p>}
+</Leaf>
+
+<style>
+  /* page openers (about, notes, styleguide) need air under the header */
+  :global(.section-head.lvl1) {
+    padding-top: var(--space-2xl);
+  }
+  /* crop marks at the top corners of every section opener, like the trim marks on a print sheet */
+  :global(.section-head) {
+    position: relative;
+  }
+  :global(.section-head)::before,
+  :global(.section-head)::after {
+    content: '';
+    position: absolute;
+    top: -0.9rem;
+    width: 0.65rem;
+    height: 0.65rem;
+    border-top: var(--rule) solid var(--line-strong);
+    pointer-events: none;
+  }
+  :global(.section-head)::before {
+    left: calc(var(--gutter) - 0.9rem);
+    border-left: var(--rule) solid var(--line-strong);
+  }
+  :global(.section-head)::after {
+    right: calc(var(--gutter) - 0.9rem);
+    border-right: var(--rule) solid var(--line-strong);
+  }
+  :global(.section-head.lvl1)::before,
+  :global(.section-head.lvl1)::after {
+    top: calc(var(--space-2xl) - 0.9rem);
+  }
+  .title {
+    font-size: var(--step-6);
+    line-height: 0.9;
+    letter-spacing: -0.035em;
+    font-family: var(--font-heading, var(--font-serif));
+    font-weight: 500;
+  }
+  .note {
+    margin-top: var(--space-xs);
+    font-style: italic;
+    color: var(--soft);
+    font-size: var(--step-1);
+  }
+  /* Styleguide A/B: blackletter section titles */
+  :global(.heads-blackletter) .title {
+    font-family: var(--font-wordmark);
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 0.9;
+  }
+</style>

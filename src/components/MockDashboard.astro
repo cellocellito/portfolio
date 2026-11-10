@@ -1,0 +1,110 @@
+---
+// Fake-data sketch of two data-visualization dashboards (B6). No labels or units on purpose: what the
+// real dashboards showed is still a TODO in the case text.
+import { fakeBars, fakeLine, mockDashboards } from '../data/mocks';
+import type { Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+  /** the permanent "Recreated with fake data" label, repeated inside the mock */
+  stamp: string;
+}
+const m = mockDashboards(Astro.props.locale);
+const W = 240,
+  H = 110,
+  max = Math.max(...fakeBars, ...fakeLine);
+const bw = W / fakeBars.length;
+const bars = fakeBars.map((v, i) => ({ x: i * bw + bw * 0.2, w: bw * 0.6, h: (v / max) * (H - 10) }));
+const line = fakeLine.map((v, i) => `${i === 0 ? 'M' : 'L'}${(i * W) / (fakeLine.length - 1)} ${H - (v / max) * (H - 10)}`).join('');
+---
+
+<div class="mock dash" aria-hidden="true">
+  <p class="stamp-row">
+    <span class="stamp">{Astro.props.stamp}</span>
+  </p>
+  {m.titles.map((title, k) => (
+    <div class="panel">
+      <p class="title">
+        {title} <span class="legend">{m.series}</span>
+      </p>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" focusable="false">
+        <path class="axis" d={`M0 ${H - 0.5}H${W}`} />
+        {k === 0 ? bars.map((b) => <rect x={b.x} y={H - b.h} width={b.w} height={b.h} />) : <path class="line" d={line} />}
+      </svg>
+    </div>
+  ))}
+</div>
+
+<style>
+  .stamp-row {
+    grid-column: 1 / -1;
+  }
+  .stamp {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: var(--track-mono);
+    text-transform: uppercase;
+    color: var(--accent);
+    border: var(--rule) solid var(--accent);
+    padding: 0.1em 0.5em;
+  }
+  .mock {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-s);
+    padding: var(--space-s);
+    background: var(--surface);
+    font-family: var(--font-mono);
+    font-size: var(--mono-s);
+    letter-spacing: var(--track-mono);
+    user-select: none;
+  }
+  .panel {
+    padding: var(--space-s);
+    background: var(--surface-2);
+    border: var(--rule) solid var(--line);
+  }
+  .title {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2xs);
+    color: var(--ink);
+    text-transform: uppercase;
+    margin-bottom: var(--space-s);
+  }
+  .legend {
+    color: var(--muted);
+  }
+  svg {
+    width: 100%;
+    height: 7rem;
+  }
+  rect {
+    fill: var(--soft);
+  }
+  .axis {
+    stroke: var(--line-strong);
+    fill: none;
+  }
+  .line {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+  }
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2xs);
+    margin-top: var(--space-s);
+  }
+  .tiles span {
+    height: 1.75rem;
+    border: var(--rule) solid var(--line);
+  }
+  @media (max-width: 560px) {
+    .mock {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

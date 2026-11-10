@@ -1,0 +1,37 @@
+---
+id: B5
+side: B
+order: 5
+title: "This site: a record with two sides, built spec-first, where every claim has to trace back to a fact."
+name: "This site"
+org: "Personal project"
+when: "2026"
+summary: "Static Astro and TypeScript, with every case in English and Portuguese."
+status:
+  kind: live
+  label: "Live."
+stack: ["Astro", "TypeScript", "MDX"]
+draft: false
+---
+
+## Context
+
+My previous portfolio was a single page dressed as a terminal ("CELLO.SYS"), with a visitor counter that counted nothing and a log ticker full of jokes. This site replaces it.
+
+## What I built
+
+The structure is a record. Side A is automation and AI, Side B is full-stack and web. I had two art directions prototyped, Test Pressing and Void Liturgy, and picked Void Liturgy.
+
+The site has one mark, generated at build time from my project list: each pair of rays is one project. Pointing at or tapping a ray names the project, and clicking opens it. The top of every case shows the same mark with that project's rays in red.
+
+On the home page, at the top of every case and on the 404 page, the mark is drawn in WebGL as liquid chrome that pours in from the top, after the visitor's first move, touch, scroll or key, or a few seconds after load. The reflection follows the pointer. With reduced motion, Save-Data, without WebGL2 or on a graphics chip without high-precision floats, it stays a flat drawing.
+
+Pages change with a dithered wipe, and on a computer a faint dither follows the pointer.
+
+It is static Astro and TypeScript with no UI framework: JavaScript runs only the motion and the WebGL mark. Every case is an MDX file in English and Portuguese, checked against a schema, and the build fails if one language is missing.
+
+The site sets a strict Content Security Policy with no inline scripts, and it loads no third-party scripts, fonts or assets.
+
+## Status
+
+Live. Adding or removing a project redraws the mark on the next build.

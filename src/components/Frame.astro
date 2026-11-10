@@ -1,0 +1,147 @@
+---
+// A ruled frame with vermilion thorn corners (portraits, mocks, figures).
+import { profiles, taper } from '../lib/sigil/generate';
+interface Props {
+  class?: string;
+}
+const { class: cls } = Astro.props;
+const t = profiles.thorn;
+const corner = [
+  taper(
+    [
+      [3, 3],
+      [28, 1],
+      [52, 9],
+      [86, 4],
+    ],
+    3.2,
+    t,
+    24,
+  ),
+  taper(
+    [
+      [3, 3],
+      [1, 28],
+      [9, 52],
+      [4, 86],
+    ],
+    3.2,
+    t,
+    24,
+  ),
+  taper(
+    [
+      [3, 3],
+      [16, 12],
+      [22, 26],
+      [40, 38],
+    ],
+    2.6,
+    t,
+    18,
+  ),
+  taper(
+    [
+      [30, 4],
+      [36, 10],
+      [38, 16],
+      [46, 20],
+    ],
+    1.4,
+    t,
+    10,
+  ),
+  taper(
+    [
+      [4, 30],
+      [10, 36],
+      [16, 38],
+      [20, 46],
+    ],
+    1.4,
+    t,
+    10,
+  ),
+  taper(
+    [
+      [56, 7],
+      [60, 12],
+      [61, 18],
+      [66, 22],
+    ],
+    1.1,
+    t,
+    8,
+  ),
+  taper(
+    [
+      [7, 56],
+      [12, 60],
+      [18, 61],
+      [22, 66],
+    ],
+    1.1,
+    t,
+    8,
+  ),
+];
+const pos = ['tl', 'tr', 'bl', 'br'] as const;
+---
+
+<div class:list={['frame', cls]}>
+  {pos.map((p) => (
+    <svg class:list={['corner', p]} viewBox="0 0 92 92" aria-hidden="true" focusable="false">
+      <g fill="currentColor">
+        {corner.map((d) => (
+          <path d={d} />
+        ))}
+      </g>
+    </svg>
+  ))}
+  <slot />
+</div>
+
+<style>
+  .frame {
+    position: relative;
+    padding: var(--space-m);
+    border: var(--rule) solid var(--line);
+  }
+  .corner {
+    position: absolute;
+    width: 4.5rem;
+    height: 4.5rem;
+    color: var(--accent);
+    overflow: visible;
+    pointer-events: none;
+  }
+  .tl {
+    left: -0.4rem;
+    top: -0.4rem;
+  }
+  .tr {
+    right: -0.4rem;
+    top: -0.4rem;
+    transform: scaleX(-1);
+  }
+  .bl {
+    left: -0.4rem;
+    bottom: -0.4rem;
+    transform: scaleY(-1);
+  }
+  .br {
+    right: -0.4rem;
+    bottom: -0.4rem;
+    transform: scale(-1, -1);
+  }
+  /* phones: smaller corners and padding so the framed content keeps its width */
+  @media (max-width: 560px) {
+    .frame {
+      padding: var(--space-xs);
+    }
+    .corner {
+      width: 3rem;
+      height: 3rem;
+    }
+  }
+</style>

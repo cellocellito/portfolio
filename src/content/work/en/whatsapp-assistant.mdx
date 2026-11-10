@@ -1,0 +1,65 @@
+---
+id: A2
+side: A
+order: 2
+title: "A WhatsApp assistant whose router hands requests to Gmail, Calendar and Notion specialists, and remembers through Qdrant."
+name: "WhatsApp AI assistant"
+org: "FATEC Botucatu, capstone"
+when: "Jan 2026"
+summary: "A router agent on GPT-5-mini, Whisper for voice notes and web search, built on n8n, Supabase and Redis and self-hosted with Docker."
+status:
+  kind: used
+  label: "Built as my capstone. I use it daily."
+stack: ["n8n", "GPT-5-mini", "Whisper", "Qdrant", "Supabase", "Redis", "Docker", "Evolution API", "Gmail", "Google Calendar", "Notion"]
+diagram:
+  nodes:
+    - { id: wa, label: "WhatsApp (Evolution API)", kind: channel, col: 0, row: 0 }
+    - { id: n8n, label: "n8n (orchestration)", kind: service, col: 1, row: 0 }
+    - { id: whisper, label: "Whisper (voice notes)", kind: model, col: 2, row: 1 }
+    - { id: router, label: "Router agent (GPT-5-mini)", kind: model, col: 2, row: 0 }
+    - { id: gmail, label: "Gmail specialist", kind: service, col: 3, row: 0 }
+    - { id: gcal, label: "Calendar specialist", kind: service, col: 3, row: 1 }
+    - { id: notion, label: "Notion finance specialist", kind: service, col: 3, row: 2 }
+    - { id: search, label: "Web search", kind: service, col: 3, row: 3 }
+    - { id: qdrant, label: "Qdrant (long-term memory)", kind: store, col: 3, row: 4 }
+    - { id: supa, label: "Supabase", kind: store, col: 2, row: 2 }
+    - { id: redis, label: "Redis", kind: store, col: 2, row: 3 }
+  edges:
+    - { from: wa, to: n8n }
+    - { from: n8n, to: whisper }
+    - { from: n8n, to: router }
+    - { from: router, to: gmail }
+    - { from: router, to: gcal }
+    - { from: router, to: notion }
+    - { from: router, to: search }
+    - { from: router, to: qdrant }
+    - { from: n8n, to: supa }
+    - { from: n8n, to: redis }
+  confirmed: true
+draft: false
+---
+
+## Context
+
+This is my capstone for Systems Analysis and Development at FATEC Botucatu: one WhatsApp chat in front of three specialists, one for Gmail, one for Google Calendar and one for a finance tracker in Notion.
+
+I picked those three because all of them have free APIs, and WhatsApp connects through Evolution API.
+
+## What I built
+
+A router agent reads every message and hands the request to a specialist: one for Gmail, one for Google Calendar, one for the Notion finance tracker. Voice notes go through Whisper first. Long-term memory lives in Qdrant, and the agent can search the web when it needs something current. n8n orchestrates it all, with Supabase and Redis, self-hosted with Docker. The model is GPT-5-mini.
+
+<Diagram graph={frontmatter.diagram} />
+
+## Decisions
+
+- **A router in front of specialists, instead of one agent with every tool.** Splitting the work keeps a single agent from carrying all of it, and the tasks come out better this way.
+- **Self-hosted with Docker.** It costs nothing, and running it myself is practice.
+
+## What broke
+
+What I remember breaking is the way the assistant's personality was injected from Supabase. I changed that part later.
+
+## Status
+
+Built as my capstone. I use it daily.

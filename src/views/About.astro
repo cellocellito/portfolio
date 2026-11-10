@@ -1,0 +1,246 @@
+---
+import Base from '../layouts/Base.astro';
+import Leaf from '../components/Leaf.astro';
+import Portrait from '../components/Portrait.astro';
+import SectionHead from '../components/SectionHead.astro';
+import Skills from '../components/Skills.astro';
+import { localePath, t, type Locale } from '../i18n';
+import { profile } from '../data/profile';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const s = t(locale);
+const p = profile(locale);
+const paragraphs = p.personal.approved ? [...p.bio, p.personal.text] : p.bio;
+---
+
+<Base locale={locale} title={s.meta.aboutTitle} description={s.meta.aboutDescription} spine>
+  <article class="about spine-seg">
+    <SectionHead level={1} kicker={s.kicker.about} title={s.about.title} id="about-title" />
+
+    <Leaf class="bio-leaf" reveal>
+      <div slot="margin">
+        <h2 class="sr-only">{s.about.facts}</h2>
+        <dl class="facts">
+          <div>
+            <dt>{s.about.mode}</dt>
+            <dd>{p.remote}</dd>
+          </div>
+          <div>
+            <dt>{s.about.english}</dt>
+            <dd>{p.english}</dd>
+          </div>
+        </dl>
+      </div>
+      <div class="bio-grid">
+        <div class="bio">
+          {paragraphs.map((para) => (
+            <p>{para}</p>
+          ))}
+        </div>
+        <Portrait alt={s.about.photoAlt} caption="Fig. I · Cello" />
+      </div>
+    </Leaf>
+
+    <section aria-labelledby="timeline-title">
+      <Leaf ruled class="sub" reveal>
+        <h2 slot="margin" id="timeline-title" class="mh">
+          {s.about.timeline}
+        </h2>
+        <ol class="timeline">
+          {p.timeline.map((x) => (
+            <li>
+              <span class="when mono">{x.when}</span>
+              <span class="what">{x.what}</span>
+              <span class="where">{x.where}</span>
+            </li>
+          ))}
+        </ol>
+      </Leaf>
+    </section>
+
+    <section aria-labelledby="skills-title">
+      <Leaf ruled class="sub" reveal>
+        <h2 slot="margin" id="skills-title" class="mh">
+          {s.about.skills}
+        </h2>
+        <Skills locale={locale} />
+      </Leaf>
+    </section>
+
+    <section aria-labelledby="credits-title">
+      <Leaf ruled class="sub" reveal>
+        <h2 slot="margin" id="credits-title" class="mh">
+          {s.about.credits}
+        </h2>
+        <dl class="credits">
+          <div>
+            <dt>{s.credits.spec}</dt>
+            <dd>{s.credits.specBy}</dd>
+          </div>
+          <div>
+            <dt>{s.credits.code}</dt>
+            <dd>{s.credits.codeBy}</dd>
+          </div>
+          <div>
+            <dt>{s.credits.type}</dt>
+            {s.credits.typeBy.map((x) => (
+              <dd>{x}</dd>
+            ))}
+          </div>
+          <div>
+            <dt>{s.credits.art}</dt>
+            <dd>{s.credits.artBy}</dd>
+          </div>
+        </dl>
+        <p class="how mono">
+          <a href={localePath(locale, '/work/this-site')}>{s.footer.howBuilt}</a>
+        </p>
+      </Leaf>
+    </section>
+  </article>
+</Base>
+
+<style>
+  .about :global(.bio-leaf) {
+    margin-top: var(--space-xl);
+  }
+  .facts div + div {
+    margin-top: var(--space-s);
+  }
+  .facts dt {
+    color: var(--muted);
+  }
+  .facts dd {
+    color: var(--ink);
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: var(--font-serif);
+    font-size: var(--step-0);
+    line-height: 1.35;
+  }
+  .bio-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(12rem, 20rem);
+    gap: var(--space-xl);
+    align-items: start;
+  }
+  .bio p {
+    color: var(--soft);
+  }
+  .bio p + p {
+    margin-top: var(--space-s);
+  }
+  .bio p:first-child {
+    color: var(--ink);
+    font-size: var(--step-1);
+    line-height: 1.45;
+    text-align: start;
+  }
+  .bio p:first-child::first-letter {
+    float: left;
+    font-style: italic;
+    color: var(--accent);
+    font-size: 3.4em;
+    line-height: 0.8;
+    padding: 0.08em 0.1em 0 0;
+  }
+  .about :global(.sub) {
+    margin-top: var(--space-2xl);
+  }
+  .timeline {
+    list-style: none;
+    padding: 0;
+  }
+  .timeline li {
+    display: grid;
+    grid-template-columns: 10rem minmax(0, 1fr);
+    column-gap: var(--space-m);
+    padding-block: var(--space-s);
+    border-bottom: var(--rule) solid var(--line);
+  }
+  .timeline li + li {
+    margin-top: 0;
+  }
+  .timeline li:first-child {
+    padding-top: 0;
+  }
+  .when {
+    grid-row: 1 / span 2;
+    color: var(--soft);
+    padding-top: 0.3em;
+  }
+  .what {
+    font-size: var(--step-1);
+    line-height: 1.3;
+  }
+  .where {
+    color: var(--soft);
+  }
+  .credits {
+    display: grid;
+    gap: var(--space-s);
+  }
+  .credits div {
+    display: grid;
+    grid-template-columns: minmax(8rem, 16rem) minmax(0, 1fr);
+    column-gap: var(--space-m);
+    padding-bottom: var(--space-s);
+    border-bottom: var(--rule) solid var(--line);
+  }
+  .credits dt {
+    font-family: var(--font-mono);
+    font-size: var(--mono-s);
+    letter-spacing: var(--track-mono);
+    text-transform: uppercase;
+    padding-top: 0.3em;
+  }
+  .credits dd {
+    grid-column: 2;
+    color: var(--ink);
+  }
+  .credits dd + dd {
+    margin-top: var(--space-3xs);
+  }
+  .how {
+    margin-top: var(--space-s);
+  }
+  .how a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  @media (max-width: 860px) {
+    .facts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+      gap: var(--space-s);
+      margin-bottom: var(--space-m);
+    }
+    .facts div + div {
+      margin-top: 0;
+    }
+  }
+  @media (max-width: 640px) {
+    .bio-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (max-width: 560px) {
+    .credits div {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: var(--space-3xs);
+    }
+    .credits dd {
+      grid-column: 1;
+    }
+    .timeline li {
+      grid-template-columns: 1fr;
+    }
+    .when {
+      grid-row: auto;
+    }
+  }
+</style>

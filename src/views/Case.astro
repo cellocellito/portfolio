@@ -1,0 +1,724 @@
+---
+import { Image, getImage } from 'astro:assets';
+import { render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Diagram from '../components/Diagram.astro';
+import SigilPair from '../components/SigilPair.astro';
+import Door from '../components/Door.astro';
+import Frame from '../components/Frame.astro';
+import Leaf from '../components/Leaf.astro';
+import Words from '../components/Words.astro';
+import MockDashboard from '../components/MockDashboard.astro';
+import MockKanban from '../components/MockKanban.astro';
+import Mark from '../components/Mark.astro';
+import StatusTag from '../components/StatusTag.astro';
+import { localePath, t, type Locale } from '../i18n';
+import { position, slugOf, works, type Work } from '../lib/content';
+
+interface Props {
+  entry: Work;
+  locale: Locale;
+}
+const { entry, locale } = Astro.props;
+const s = t(locale);
+const d = entry.data;
+const { Content, headings } = await render(entry);
+
+const record = await works(locale);
+const i = record.findIndex((e) => e.id === entry.id);
+const prev = i > 0 ? record[i - 1] : undefined;
+const next = i >= 0 && i < record.length - 1 ? record[i + 1] : undefined;
+const kicker = d.side === 'A' ? s.kicker.sideA : s.kicker.sideB;
+const links = [
+  d.links.live && { href: d.links.live, label: s.work.live },
+  d.links.repo && { href: d.links.repo, label: s.work.repo },
+  d.links.video && { href: d.links.video, label: s.work.video },
+].filter((l): l is { href: string; label: string } => Boolean(l));
+const when = d.when.includes('TODO') ? s.work.whenTodo : d.when;
+// a description with a TODO would ship to search results and link previews
+const where = [d.org, d.when.includes('TODO') ? undefined : d.when].filter(Boolean).join(', ');
+const description = where ? `${d.title.replace(/\.$/, '')} (${where}).` : d.title;
+const sections = headings.filter((h) => h.depth === 2);
+// a phone gets a phone-sized capture of the live site instead of a shrunken desktop one
+const WIDE = [720, 1080, 1440];
+const NARROW = [390, 780];
+const shot = d.shot
+  ? {
+      wideAvif: await getImage({ src: d.shot.src, format: 'avif', widths: WIDE }),
+      wideWebp: await getImage({ src: d.shot.src, format: 'webp', widths: WIDE }),
+      narrowAvif: d.shot.mobile ? await getImage({ src: d.shot.mobile, format: 'avif', widths: NARROW }) : undefined,
+      narrowWebp: d.shot.mobile ? await getImage({ src: d.shot.mobile, format: 'webp', widths: NARROW }) : undefined,
+    }
+  : undefined;
+const wideSizes = '(max-width: 860px) 100vw, 56rem';
+const extra = [{ slug: 'stack-title', text: s.work.stack }, ...(links.length ? [{ slug: 'links-title', text: s.work.links }] : [])];
+---
+
+<Base locale={locale} title={`${d.name} · ${s.meta.siteName}`} description={description} ogType="article" spine lcpFont="serif">
+  <article class="case spine-seg">
+    <header class="head">
+      <div class="head-margin">
+        <p class="pos" aria-hidden="true">
+          {position(entry)}
+        </p>
+        <p class="side mono">
+          <span class="rubric">{kicker}</span>
+          <br />
+          {s.sides[d.side]}
+        </p>
+      </div>
+      <div class="head-body">
+        <p class="name mono">
+          <span class="sr-only">{position(entry)} · </span>
+          {d.name}
+        </p>
+        <h1 class="headline">
+          <Words text={d.title} />
+        </h1>
+      </div>
+      <figure class="head-sigil">
+        {/* the site's one mark, with this case's rays lit; the status stamped on its corner */}
+        <Mark locale={locale} current={slugOf(entry)} />
+        {d.status.kind !== 'todo' && (
+          <span class="cover-stamp" aria-hidden="true">
+            {s.statusKind[d.status.kind]}
+          </span>
+        )}
+        <figcaption class="mono">{s.work.sigilCase}</figcaption>
+      </figure>
+    </header>
+
+    <Leaf ruled class="details">
+      <span slot="margin" class="rubric">
+        {s.work.details}
+      </span>
+      <dl class="facts">
+        {d.org && (
+          <div>
+            <dt>{s.work.org}</dt>
+            <dd>{d.org}</dd>
+          </div>
+        )}
+        {d.role && (
+          <div>
+            <dt>{s.work.role}</dt>
+            <dd>{d.role}</dd>
+          </div>
+        )}
+        <div>
+          <dt>{s.work.when}</dt>
+          <dd>{when}</dd>
+        </div>
+        <div>
+          <dt>{s.work.status}</dt>
+          <dd>{d.status.kind === 'todo' ? s.work.statusTodo : <StatusTag label={s.statusKind[d.status.kind]} />}</dd>
+        </div>
+        {d.links.live && (
+          <div class="live-cell">
+            <dt>{s.work.live}</dt>
+            <dd>
+              <a class="live" href={d.links.live} rel="noopener noreferrer">
+                {new URL(d.links.live).host}
+                <span class="ext" aria-hidden="true">
+                  ↗
+                </span>
+              </a>
+            </dd>
+          </div>
+        )}
+      </dl>
+      {d.brand && (
+        <div class="brand">
+          <Image src={d.brand.logo} alt={d.brand.alt} width={200} widths={[200, 400]} sizes="200px" loading="lazy" />
+        </div>
+      )}
+    </Leaf>
+
+    {d.mock && (
+      <Leaf class="mock-leaf" reveal="dither">
+        <span slot="margin" class="rubric">
+          {s.work.mock}
+        </span>
+        <figure class="mock-fig">
+          <Frame>
+            {d.id === 'B6' ? <MockDashboard locale={locale} stamp={s.work.mock} /> : <MockKanban locale={locale} stamp={s.work.mock} />}
+          </Frame>
+          <figcaption>
+            <strong>{s.work.mock}.</strong> {d.id === 'B6' ? s.work.mockNoteCharts : s.work.mockNote}
+          </figcaption>
+        </figure>
+      </Leaf>
+    )}
+
+    {d.shot && (
+      <Leaf class="shot-leaf" reveal="dither">
+        <span slot="margin" class="rubric">
+          {s.work.live}
+        </span>
+        <figure class="shot">
+          <Frame>
+            <a class="shot-link" href={d.links.live} rel="noopener noreferrer">
+              <span class="sr-only">{s.work.openLive}: </span>
+              <picture>
+                {shot?.narrowAvif && d.shot.mobile && (
+                  <source
+                    media="(max-width: 600px)"
+                    type="image/avif"
+                    srcset={shot.narrowAvif.srcSet.attribute}
+                    sizes="100vw"
+                    width={d.shot.mobile.width}
+                    height={d.shot.mobile.height}
+                  />
+                )}
+                {shot?.narrowWebp && d.shot.mobile && (
+                  <source
+                    media="(max-width: 600px)"
+                    type="image/webp"
+                    srcset={shot.narrowWebp.srcSet.attribute}
+                    sizes="100vw"
+                    width={d.shot.mobile.width}
+                    height={d.shot.mobile.height}
+                  />
+                )}
+                {shot && <source type="image/avif" srcset={shot.wideAvif.srcSet.attribute} sizes={wideSizes} />}
+                {shot && (
+                  <img
+                    src={shot.wideWebp.src}
+                    srcset={shot.wideWebp.srcSet.attribute}
+                    sizes={wideSizes}
+                    width={d.shot.src.width}
+                    height={d.shot.src.height}
+                    alt={d.shot.alt}
+                    decoding="async"
+                  />
+                )}
+              </picture>
+            </a>
+          </Frame>
+          <figcaption class="mono">{d.shot.caption}</figcaption>
+        </figure>
+      </Leaf>
+    )}
+
+    <div class="prose">
+      <nav class="toc" aria-label={s.work.onThisPage}>
+        <p class="rubric">{s.work.onThisPage}</p>
+        <ol>
+          {sections.map((h, n) => (
+            <li>
+              <a href={`#${h.slug}`}>
+                <span class="n" aria-hidden="true">
+                  {String(n + 1).padStart(2, '0')}
+                </span>
+                {h.text}
+              </a>
+            </li>
+          ))}
+          {extra.map((h) => (
+            <li>
+              <a href={`#${h.slug}`}>
+                <span class="n" aria-hidden="true">
+                  ·
+                </span>
+                {h.text}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+      <Content components={{ Diagram, SigilPair }} />
+    </div>
+
+    <Leaf ruled class="stack-leaf" reveal>
+      <h2 slot="margin" id="stack-title" class="mh">
+        {s.work.stack}
+      </h2>
+      <ul class="stack" aria-labelledby="stack-title">
+        {d.stack.map((x) => (
+          <li>{x}</li>
+        ))}
+      </ul>
+    </Leaf>
+
+    {links.length > 0 && (
+      <Leaf ruled class="links-leaf">
+        <h2 slot="margin" id="links-title" class="mh">
+          {s.work.links}
+        </h2>
+        <ul class="links" aria-labelledby="links-title">
+          {links.map((l) => (
+            <li>
+              <a href={l.href} rel="noopener noreferrer">
+                {l.label}
+                <span class="ext" aria-hidden="true">
+                  ↗
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </Leaf>
+    )}
+
+    <nav aria-label={s.a11y.trackNav} class="track-nav">
+      <Leaf ruled>
+        <span slot="margin" class="rubric">
+          {kicker} · {position(entry)}
+        </span>
+        <ul class="doors">
+          {prev && (
+            <li>
+              <Door
+                href={localePath(locale, `/work/${slugOf(prev)}`)}
+                kicker={`${s.work.prev} · ${position(prev)}`}
+                label={prev.data.name}
+              />
+            </li>
+          )}
+          {next && (
+            <li>
+              <Door
+                href={localePath(locale, `/work/${slugOf(next)}`)}
+                kicker={`${s.work.next} · ${position(next)}`}
+                label={next.data.name}
+              />
+            </li>
+          )}
+          <li>
+            <a class="all" href={`${localePath(locale, '/')}#side-${d.side.toLowerCase()}`}>
+              {s.work.back}
+            </a>
+          </li>
+        </ul>
+      </Leaf>
+    </nav>
+  </article>
+</Base>
+
+<style>
+  /* Cover: the site's mark with this case's rays lit, in liquid chrome where WebGL2
+     runs (src/scripts/hero-gl.ts), beside the position and the headline. Clipped sideways: the stamp lands
+     from twice its size and must never widen the page on a phone. */
+  .head {
+    --cover-h: min(60svh, 36rem);
+    overflow-x: clip;
+    display: grid;
+    grid-template-columns: var(--margin-col) minmax(0, 1fr) auto;
+    column-gap: var(--gutter);
+    padding: var(--space-xl) var(--gutter) var(--space-xl);
+    max-width: var(--page-max);
+    margin-inline: auto;
+    align-items: center;
+  }
+  .head-margin {
+    text-align: right;
+    padding-right: var(--space-s);
+    border-right: var(--rule) solid var(--line);
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .pos {
+    font-style: italic;
+    color: var(--accent);
+    font-size: var(--step-6);
+    line-height: 0.8;
+    letter-spacing: -0.03em;
+  }
+  .side {
+    margin-top: var(--space-s);
+    color: var(--soft);
+  }
+  .name {
+    color: var(--soft);
+  }
+  .headline {
+    margin-top: var(--space-xs);
+    font-size: clamp(2rem, 1.45rem + 2.3vw, 3.5rem);
+    line-height: 1.06;
+    letter-spacing: -0.02em;
+    max-width: 24ch;
+  }
+  .head-sigil {
+    position: relative; /* the WebGL canvas is placed inside it */
+    justify-self: end;
+  }
+  .head-sigil :global(.sigil) {
+    height: var(--cover-h);
+    width: auto;
+  }
+  /* the status stamped big on the cover's corner, like a label on a sleeve */
+  .cover-stamp {
+    position: absolute;
+    z-index: 3;
+    right: -0.5rem;
+    bottom: 3.2rem;
+    padding: 0.35em 0.8em;
+    border: 4px double var(--accent);
+    color: var(--accent);
+    background: rgb(8 7 7 / 0.35);
+    font-family: var(--font-mono);
+    font-size: clamp(0.95rem, 0.7rem + 0.6vw, 1.35rem);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transform: rotate(-12deg);
+    filter: url(#ink);
+    opacity: 0.92;
+    pointer-events: none;
+  }
+  .head-sigil figcaption {
+    margin-top: var(--space-xs);
+    color: var(--muted);
+    text-align: right;
+    text-transform: none;
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: var(--space-s) var(--space-l);
+  }
+  .facts dt {
+    font-family: var(--font-mono);
+    font-size: var(--mono-s);
+    letter-spacing: var(--track-mono);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .facts dd {
+    margin-top: var(--space-3xs);
+    color: var(--ink);
+  }
+  /* one logo box, so a wide wordmark and a tall mark sit at the same visual size */
+  .live {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    min-height: 44px;
+    margin-block: -0.6rem;
+    white-space: nowrap;
+  }
+  .brand {
+    margin-top: var(--space-l);
+  }
+  .brand :global(img) {
+    width: auto;
+    height: auto;
+    max-width: 12.5rem;
+    max-height: 3.5rem;
+  }
+
+  .case :global(.mock-leaf) {
+    margin-top: var(--space-xl);
+  }
+  .mock-fig figcaption {
+    margin-top: var(--space-s);
+    color: var(--soft);
+    max-width: var(--measure);
+  }
+  .mock-fig figcaption strong {
+    color: var(--ink);
+  }
+
+  /* MDX body on the codex grid: each h2 sits in the margin beside the first block of its section. */
+  .prose {
+    display: grid;
+    grid-template-columns: var(--margin-col) minmax(0, 1fr) minmax(9rem, 13rem);
+    column-gap: var(--gutter);
+    padding-inline: var(--gutter);
+    max-width: var(--page-max);
+    margin: var(--space-xl) auto 0;
+    counter-reset: section;
+  }
+  .prose > :global(*) {
+    grid-column: 2;
+    margin-top: var(--space-s);
+  }
+  /* section heads one step up, on the page's spine with a node each */
+  .prose > :global(h2) {
+    position: relative;
+    grid-column: 1;
+    text-align: right;
+    padding-right: var(--space-s);
+    border-right: var(--rule) solid var(--line);
+    font-size: var(--step-2);
+    font-style: italic;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    align-self: stretch;
+  }
+  :global(.has-spine) .head-margin,
+  :global(.has-spine) .prose > :global(h2) {
+    border-right-color: transparent;
+  }
+  @media (min-width: 861px) {
+    :global(.has-spine) .prose > :global(h2)::after {
+      content: '';
+      position: absolute;
+      top: 1.35rem;
+      right: -0.3rem;
+      width: 0.6rem;
+      height: 0.6rem;
+      border: var(--rule) solid var(--accent);
+      background: var(--bg);
+      transform: rotate(45deg);
+    }
+  }
+  .prose > :global(h2::before) {
+    counter-increment: section;
+    content: counter(section, decimal-leading-zero);
+    content: counter(section, decimal-leading-zero) / '';
+    display: block;
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: var(--mono-s);
+    letter-spacing: var(--track-mono);
+    color: var(--accent);
+    margin-bottom: var(--space-3xs);
+  }
+  .prose > :global(h2),
+  .prose > :global(h2 + *) {
+    margin-top: var(--space-xl);
+  }
+  .prose > :global(h2:first-of-type),
+  .prose > :global(h2:first-of-type + *) {
+    margin-top: 0;
+  }
+  .prose > :global(figure) {
+    grid-column: 2;
+  }
+  .prose :global(p),
+  .prose :global(li) {
+    color: var(--soft);
+  }
+  .prose :global(strong) {
+    color: var(--ink);
+  }
+  .prose > :global(ul) {
+    list-style: none;
+    padding: 0;
+    max-width: var(--measure);
+  }
+  .prose > :global(ul > li) {
+    position: relative;
+    padding-left: var(--space-m);
+  }
+  .prose > :global(ul > li + li) {
+    margin-top: var(--space-s);
+  }
+  .prose > :global(ul > li::before) {
+    content: '';
+    position: absolute;
+    left: 0.2rem;
+    top: 0.62em;
+    width: 0.4rem;
+    height: 0.4rem;
+    border: var(--rule) solid var(--accent);
+    transform: rotate(45deg);
+  }
+
+  /* a sticky list of the sections fills the right column on wide screens */
+  .toc {
+    grid-column: 3;
+    grid-row: 1 / span 40;
+    align-self: start;
+    position: sticky;
+    top: var(--space-l);
+    margin-top: 0;
+    padding-left: var(--space-s);
+    border-left: var(--rule) solid var(--line);
+  }
+  .toc ol {
+    list-style: none;
+    padding: 0;
+    margin-top: var(--space-xs);
+  }
+  .toc li + li {
+    margin-top: 0;
+  }
+  .toc a {
+    display: flex;
+    gap: var(--space-2xs);
+    align-items: baseline;
+    min-height: 44px;
+    padding-block: 0.55rem;
+    font-size: var(--step--1);
+    line-height: 1.3;
+    text-decoration: none;
+    color: var(--soft);
+  }
+  .toc a:hover {
+    color: var(--accent);
+  }
+  .toc .n {
+    font-family: var(--font-mono);
+    font-size: var(--mono-s);
+    color: var(--muted);
+    min-width: 1.6em;
+  }
+  .case :global(.shot-leaf) {
+    margin-top: var(--space-xl);
+  }
+  .shot img {
+    width: 100%;
+    height: auto;
+  }
+  .shot-link {
+    display: block;
+  }
+  .shot-link:hover img {
+    outline: 1px solid var(--accent);
+  }
+  .shot figcaption {
+    margin-top: var(--space-s);
+    color: var(--soft);
+    text-transform: none;
+  }
+  .case :global(.stack-leaf) {
+    margin-top: var(--space-2xl);
+  }
+  .stack,
+  .links,
+  .doors {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs) var(--space-s);
+  }
+  .stack li,
+  .links li,
+  .doors li {
+    margin: 0;
+  }
+  .stack li {
+    font-family: var(--font-mono);
+    font-size: var(--mono-m);
+    letter-spacing: var(--track-mono);
+    color: var(--ink);
+    padding: 0.2em 0.6em;
+    border: var(--rule) solid var(--line-strong);
+  }
+  .links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    min-height: 44px;
+    font-size: var(--step-1);
+  }
+  .ext {
+    color: var(--accent);
+  }
+  .track-nav {
+    margin-top: var(--space-xl);
+  }
+  .doors {
+    align-items: center;
+    gap: var(--space-s);
+  }
+  .all {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-family: var(--font-mono);
+    font-size: var(--mono-m);
+    letter-spacing: var(--track-mono);
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 1100px) {
+    .toc {
+      display: none;
+    }
+    .prose {
+      grid-template-columns: var(--margin-col) minmax(0, 1fr);
+    }
+  }
+  @media (max-width: 560px) {
+    .live-cell {
+      grid-column: 1 / -1;
+    }
+    .doors li,
+    .doors :global(.door) {
+      width: 100%;
+    }
+    .facts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-s) var(--space-m);
+    }
+  }
+  @media (max-width: 860px) {
+    .head {
+      --cover-h: min(42svh, 22rem);
+      grid-template-columns: minmax(0, 1fr);
+      padding-top: var(--space-l);
+      row-gap: var(--space-s);
+    }
+    .head-sigil {
+      grid-row: 1;
+      justify-self: center;
+    }
+    .head-margin {
+      grid-row: 2;
+      text-align: left;
+      border-right: 0;
+      padding-right: 0;
+      display: flex;
+      flex-direction: row;
+      justify-content: start;
+      align-items: baseline;
+      gap: var(--space-s);
+    }
+    .pos {
+      font-size: var(--step-5);
+    }
+    .side {
+      margin-top: 0;
+    }
+    .head-body {
+      grid-row: 3;
+    }
+    .head-sigil figcaption {
+      display: none;
+    }
+    /* tablets keep the two-column cover (text left, sigil right), phones stack */
+    @media (min-width: 561px) {
+      .head {
+        --cover-h: min(48svh, 26rem);
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+      }
+      .head-sigil {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+      }
+      .head-margin {
+        grid-column: 1;
+        grid-row: 1;
+        align-self: end;
+      }
+      .head-body {
+        grid-column: 1;
+        grid-row: 2;
+        align-self: start;
+      }
+    }
+    .prose {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .prose > :global(*),
+    .prose > :global(figure) {
+      grid-column: 1;
+    }
+    .prose > :global(h2) {
+      text-align: left;
+      border-right: 0;
+      padding-right: 0;
+    }
+    .prose > :global(h2 + *) {
+      margin-top: var(--space-xs);
+    }
+  }
+</style>

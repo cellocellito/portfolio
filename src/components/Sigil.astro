@@ -1,0 +1,45 @@
+---
+// SVG sigil from a graph. Decorative (the readable diagram carries the information).
+// Also the no-WebGL fallback for the hero.
+import { generateSigil, VIEW_H, VIEW_W, type SigilGraph } from '../lib/sigil/generate';
+
+interface Props {
+  graph: SigilGraph;
+  seedKey: string;
+  /** stroke multiplier: >1 for small renders so thin barbs survive */
+  weight?: number;
+  /** turn 90° for the horizontal divider band */
+  sideways?: boolean;
+  /** the first generator's curl sign (B5 figure, 404 ornament) */
+  ribs?: boolean;
+  /** render as liquid chrome when WebGL2 is available (src/scripts/hero-gl.ts); one per page */
+  gl?: boolean;
+  /** id on the path group, so a second SVG can reuse it through <use> instead of repeating the paths */
+  gid?: string;
+  class?: string;
+}
+const { graph, seedKey, weight = 1, sideways = false, ribs = false, gl = false, gid, class: cls } = Astro.props;
+const { paths, seed } = generateSigil(graph, seedKey, weight, { ribs });
+const vb = sideways ? `0 0 ${VIEW_H} ${VIEW_W}` : `0 0 ${VIEW_W} ${VIEW_H}`;
+---
+
+<svg
+  class:list={['sigil', cls]}
+  viewBox={vb}
+  aria-hidden="true"
+  focusable="false"
+  data-seed={seed.toString(16)}
+  data-gl={gl ? '' : undefined}
+>
+  <g id={gid} transform={sideways ? `translate(${VIEW_H} 0) rotate(90)` : undefined} fill="currentColor">
+    {paths.map((d) => (
+      <path d={d} />
+    ))}
+  </g>
+</svg>
+
+<style>
+  .sigil {
+    color: var(--ink);
+  }
+</style>

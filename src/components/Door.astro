@@ -1,0 +1,52 @@
+---
+// Entry link to a side (or any primary destination): a mono rubric and a serif label.
+interface Props {
+  href: string;
+  kicker: string;
+  label: string;
+}
+const { href, kicker, label } = Astro.props;
+---
+
+<a class="door" href={href}>
+  <span class="kick">{kicker}</span>
+  <span class="label">{label}</span>
+</a>
+
+<style>
+  .door {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-xs);
+    min-height: 2.75rem;
+    padding: var(--space-xs) var(--space-m);
+    border: var(--rule) solid var(--line-strong);
+    text-decoration: none;
+    font-size: var(--step-1);
+    line-height: 1.2;
+    transition:
+      background-color var(--dur-base) var(--ease-ink),
+      border-color var(--dur-base) var(--ease-ink),
+      color var(--dur-base) var(--ease-ink);
+  }
+  .kick {
+    font-family: var(--font-mono);
+    font-size: var(--mono-s);
+    letter-spacing: var(--track-mono);
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--accent);
+    transition: color var(--dur-base) var(--ease-ink);
+  }
+  .door:hover,
+  .door:focus-visible {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+  }
+  .door:hover .kick,
+  .door:focus-visible .kick {
+    color: var(--on-accent);
+  }
+</style>

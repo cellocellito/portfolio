@@ -1,0 +1,38 @@
+---
+// The vermilion rule under the name: a thorn wire. A hairline that
+// ends in a needle point, with small curved thorns along it, alternating up and down and shrinking toward
+// the right. It replaced the line-thorn-diamond-thorn-line divider, which read as generic.
+interface Props {
+  class?: string;
+}
+const { class: cls } = Astro.props;
+const f = (n: number): string => n.toFixed(2);
+const thorns: string[] = [];
+for (let i = 0, x = 4; x < 260; i++, x += 30) {
+  const k = 1 - (x / 320) * 0.55;
+  const h = 5.6 * k,
+    l = 12 * k,
+    b = 4 * k; // thorn height, reach and base
+  thorns.push(
+    i % 2 === 0
+      ? `M${x} 5.4Q${f(x + l * 0.5)} ${f(5.4 - h * 0.3)} ${f(x + l)} ${f(5.4 - h)}Q${f(x + l * 0.55)} ${f(5.4 - h * 0.1)} ${f(x + b)} 5.4Z`
+      : `M${x} 6.6Q${f(x + l * 0.5)} ${f(6.6 + h * 0.3)} ${f(x + l)} ${f(6.6 + h)}Q${f(x + l * 0.55)} ${f(6.6 + h * 0.1)} ${f(x + b)} 6.6Z`,
+  );
+}
+---
+
+<svg class:list={['ornament', cls]} viewBox="0 0 320 12" aria-hidden="true" focusable="false">
+  <path d="M0 5.3L292 5.3Q300 6 306 6Q300 6 292 6.7L0 6.7Z" fill="currentColor"></path>
+  {thorns.map((d) => (
+    <path d={d} fill="currentColor" />
+  ))}
+</svg>
+
+<style>
+  .ornament {
+    color: var(--accent);
+    width: min(20rem, 60%);
+    height: 0.75rem;
+    margin-inline: auto;
+  }
+</style>

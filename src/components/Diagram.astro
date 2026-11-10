@@ -1,0 +1,178 @@
+---
+// Architecture diagram drawn at build time from the frontmatter graph.
+// Wide screens see the SVG; narrow ones (and screen readers, always) get the same graph as an outline.
+import DiagramTree from './DiagramTree.astro';
+import { t, type Locale } from '../i18n';
+import { diagramTree, layoutDiagram, type DiagramEdge, type DiagramNode } from '../lib/diagram';
+
+interface Props {
+  graph?: { nodes: (DiagramNode & { note?: string | undefined })[]; edges: DiagramEdge[]; confirmed?: boolean } | undefined;
+}
+
+const { graph } = Astro.props;
+const locale: Locale = Astro.currentLocale === 'pt' ? 'pt' : 'en';
+const s = t(locale);
+const key = graph ? graph.nodes.map((n) => n.id).join('-') : '';
+const layout = graph ? layoutDiagram(graph.nodes, graph.edges, key) : undefined;
+const tree = graph ? diagramTree(graph.nodes, graph.edges) : [];
+const marker = `arrow-${key.slice(0, 24)}`;
+---
+
+{graph && layout && (
+  <figure class:list={['diagram', `size-${layout.size}`]} data-reveal="dither">
+    <figcaption class="cap">
+      <span class="rubric">{s.work.diagram}</span>
+      {graph.confirmed !== true && <span class="confirm">{s.work.diagramTodo}</span>}
+    </figcaption>
+    <div class="canvas" aria-hidden="true">
+      <svg viewBox={`0 0 ${layout.width} ${layout.height}`} width={layout.width} height={layout.height} focusable="false">
+        <defs>
+          <marker id={marker} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto">
+            <path d="M0 0L8 4L0 8Z" class="head" />
+          </marker>
+        </defs>
+        <g class="edges">
+          {layout.paths.map((d) => (
+            <path d={d} marker-end={`url(#${marker})`} />
+          ))}
+        </g>
+        <g class="nodes">
+          {layout.boxes.map((b) => (
+            <g class:list={['node', `k-${b.kind}`, { hub: b.hub }]}>
+              <rect x={b.x} y={b.y} width={b.w} height={b.h} />
+              {b.kind === 'store' && <path class="store-tick" d={`M${b.x} ${b.y + b.h - 5}H${b.x + b.w}`} />}
+              <text class="kind" x={b.x + 14} y={b.y + 18}>
+                {s.nodeKind[b.kind]}
+              </text>
+              {b.lines.map((line, i) => (
+                <text class="label" x={b.x + 14} y={b.y + 40 + i * 17}>
+                  {line}
+                </text>
+              ))}
+              {b.sub && (
+                <text class="sub" x={b.x + 14} y={b.y + 40 + b.lines.length * 17}>
+                  {b.sub}
+                </text>
+              )}
+            </g>
+          ))}
+        </g>
+      </svg>
+    </div>
+    <div class="outline">
+      <p class="hint">{s.work.treeHint}</p>
+      <DiagramTree items={tree} seeAbove={s.work.seeAbove} kinds={s.nodeKind} />
+    </div>
+  </figure>
+)}
+
+<style>
+  .diagram {
+    container-type: inline-size;
+    margin-block: var(--space-l);
+  }
+  .cap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2xs) var(--space-s);
+    margin-bottom: var(--space-s);
+  }
+  /* natural size (13px labels) on wide screens, scaled down to fit narrower ones */
+  .canvas svg {
+    max-width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+  .edges path {
+    fill: none;
+    stroke: var(--line-strong);
+    stroke-width: 1.25;
+  }
+  .head {
+    fill: var(--soft);
+  }
+  .node rect {
+    fill: var(--surface);
+    stroke: var(--line-strong);
+    stroke-width: 1;
+  }
+  .node.hub rect {
+    stroke: var(--ink);
+    stroke-width: 1.5;
+  }
+  .store-tick {
+    stroke: var(--line-strong);
+  }
+  .node text {
+    font-family: var(--font-mono);
+  }
+  .kind {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    fill: var(--muted);
+  }
+  .label {
+    font-size: 13px;
+    fill: var(--ink);
+  }
+  .sub {
+    font-size: 13px;
+    fill: var(--soft);
+  }
+  .hint {
+    color: var(--soft);
+    font-style: italic;
+    margin-bottom: var(--space-xs);
+  }
+  /* Below about 0.8x of its drawn width the SVG text drops under ~10.5px, so the outline takes over. */
+  /* The outline is the accessible twin: always in the tree, visible only where the SVG would be too small. */
+  .outline {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  @container (max-width: 28rem) {
+    .size-s .canvas {
+      display: none;
+    }
+    .size-s .outline {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip: auto;
+      white-space: normal;
+    }
+  }
+  @container (max-width: 37rem) {
+    .size-m .canvas {
+      display: none;
+    }
+    .size-m .outline {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip: auto;
+      white-space: normal;
+    }
+  }
+  @container (max-width: 46rem) {
+    .size-l .canvas {
+      display: none;
+    }
+    .size-l .outline {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip: auto;
+      white-space: normal;
+    }
+  }
+</style>

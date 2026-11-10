@@ -1,0 +1,51 @@
+---
+id: B1
+side: B
+order: 1
+title: "The Pulse Sync website, designed and built from scratch with AI-assisted development."
+name: "Pulse Sync website"
+org: "Pulse Sync"
+when: "May 2026 (v2)"
+summary: "A particle-orb hero with 5,200 points and a 5-step walkthrough of an n8n flow, in plain HTML and JavaScript with three.js."
+status:
+  kind: live
+  label: "Live."
+stack: ["HTML", "JavaScript", "three.js", "GLSL", "Vercel"]
+links:
+  live: "https://pulse-sync-ai.vercel.app"
+brand:
+  logo: "../../../assets/brands/pulsesync.png"
+  alt: "Pulse Sync logo"
+shot:
+  src: "../../../assets/shots/pulse-sync.png"
+  mobile: "../../../assets/shots/pulse-sync-m.png"
+  alt: 'The Pulse Sync home page: the headline "Automatize o futuro da sua empresa." beside a sphere of violet particles.'
+  caption: "The live site at pulse-sync-ai.vercel.app, first screen, captured on 6 November 2026."
+draft: false
+---
+
+## Context
+
+Pulse Sync is where I work as a self-employed automation developer, since August 2025. This is its website.
+
+I built the first version in React in July 2025. This one is the second, from May 2026, and it uses no framework.
+
+## What I built
+
+I designed the site and built it from scratch with AI-assisted development: the frontend and the deploy.
+
+- A particle orb in the hero: 5,200 points on a Fibonacci sphere (2,400 on mobile), displaced by simplex noise in a custom shader, paused when the tab is hidden.
+- "What happens inside an automation": a 5-step walkthrough with three scenarios (AI chatbot, scheduling, lead management) that explains an n8n flow to someone who has never seen one.
+- A chat widget for visitors' questions.
+
+## Decisions
+
+- **A tech, futuristic look.** Pulse Sync sells automation, so the site should look like technology.
+
+## What broke
+
+The two parts that broke while I was building this version were the three.js sphere and the chat widget.
+
+## Status
+
+Live at pulse-sync-ai.vercel.app.

@@ -1,0 +1,650 @@
+/* Motion. Everything here hangs on
+   html.mo, which public/head.js sets before the first paint when the visitor has not asked for reduced
+   motion, so without it every block is simply where it belongs and nothing moves. The dither masks and the
+   band are generated: scripts/make-masks.mjs, scripts/make-band.mjs (public/textures). Sections:
+   a page to page · b home intro · c hero text on scroll · d arrivals · e spine progress and contents ·
+   f doors · g track rows · h links · i stamps · j the band · k pointer dust · l the mark's fallback */
+:root {
+  --mo-out: cubic-bezier(0.2, 0.8, 0.15, 1); /* arrivals: fast start, long settle */
+  --mo-wipe: cubic-bezier(0.6, 0, 0.2, 1); /* fills and wipes */
+  --mo-spring: cubic-bezier(0.3, 1.5, 0.5, 1); /* presses and stamps: a small overshoot */
+}
+
+/* ---------- a. page to page: the next page prints over the last through a dithered front; going back it
+   prints upward; a track's headline flies into its case title (public/head.js names them) ---------- */
+html.mo::view-transition-old(root) {
+  animation: mo-vt-old 780ms var(--mo-wipe) both;
+}
+html.mo::view-transition-new(root) {
+  animation: mo-vt-down 780ms var(--mo-wipe) both;
+  mask: url('/textures/vt-down.png') repeat-x 0 100% / 512px 250vh;
+}
+html.mo:active-view-transition-type(back)::view-transition-old(root) {
+  animation-name: mo-vt-old-back;
+}
+html.mo:active-view-transition-type(back)::view-transition-new(root) {
+  animation-name: mo-vt-up;
+  mask-image: url('/textures/vt-up.png');
+}
+html.mo::view-transition-group(vt-title) {
+  animation-duration: 780ms;
+  animation-timing-function: var(--mo-wipe);
+}
+/* the two titles wrap differently, so they do not cross-fade: the old one leaves early, the new one lands late */
+html.mo::view-transition-old(vt-title) {
+  animation: mo-vt-title-out 300ms linear both;
+}
+html.mo::view-transition-new(vt-title) {
+  animation: mo-vt-title-in 420ms linear 300ms both;
+}
+@keyframes mo-vt-title-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes mo-vt-title-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes mo-vt-down {
+  from {
+    mask-position: 0 100%;
+  }
+  to {
+    mask-position: 0 0;
+  }
+}
+@keyframes mo-vt-up {
+  from {
+    mask-position: 0 0;
+  }
+  to {
+    mask-position: 0 100%;
+  }
+}
+@keyframes mo-vt-old {
+  to {
+    opacity: 0.3;
+    transform: translateY(-4vh) scale(0.985);
+  }
+}
+@keyframes mo-vt-old-back {
+  to {
+    opacity: 0.3;
+    transform: translateY(4vh) scale(0.985);
+  }
+}
+
+/* ---------- b. the home intro: the wordmark prints in, the name is drawn on, the rule draws, the rest
+   follows. Pure CSS from the first paint (no script decides the order, so nothing can flicker). Nothing may
+   hold back the page's largest text (LCP), and that is the wordmark: printing it in on load cost 1.2 s of
+   LCP on a throttled phone (2.6 s against the 2.5 s budget), so it is on paper from the first frame and
+   prints again when pointed at (below). ---------- */
+html.mo .tp-name {
+  animation: mo-reveal 800ms var(--mo-wipe) 240ms both;
+}
+html.mo .tp-orn {
+  transform-origin: 0 50%;
+  animation: mo-draw 800ms var(--mo-wipe) 420ms both;
+}
+html.mo .tp-line {
+  animation: mo-rise 800ms var(--mo-out) 120ms both;
+}
+html.mo .tp-line + .tp-line {
+  animation-delay: 240ms;
+}
+html.mo .tp-fact {
+  animation: mo-fade-up 800ms var(--mo-out) 360ms both;
+}
+html.mo .tp-doors > li {
+  animation: mo-pop 700ms var(--mo-spring) 480ms both;
+}
+html.mo .tp-doors > li + li {
+  animation-delay: 580ms;
+}
+html.mo .tp-contact,
+html.mo .tp-meta {
+  animation: mo-fade-up 900ms var(--mo-out) 680ms both;
+}
+html.mo .tp-left > * {
+  animation: mo-slide 800ms var(--mo-out) 200ms both;
+}
+html.mo .tp-left > * + * {
+  animation-delay: 290ms;
+}
+html.mo .tp-left > * + * + * {
+  animation-delay: 380ms;
+}
+html.mo:not(.mo-arrived) .site-header .bar > a,
+html.mo:not(.mo-arrived) .site-header nav li {
+  animation: mo-drop 600ms var(--mo-out) both;
+}
+html.mo:not(.mo-arrived) .site-header nav li + li {
+  animation-delay: 60ms;
+}
+html.mo:not(.mo-arrived) .site-header nav li + li + li {
+  animation-delay: 120ms;
+}
+html.mo:not(.mo-arrived) .site-header nav li + li + li + li {
+  animation-delay: 180ms;
+}
+html.mo:not(.mo-arrived) .site-header nav li + li + li + li + li {
+  animation-delay: 240ms;
+}
+@media (max-width: 1100px) {
+  html.mo .tp-orn {
+    transform-origin: 50% 50%;
+  }
+}
+@keyframes mo-reveal {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 -1% 0 0);
+  }
+}
+/* a case cover opens the same way: the position slides in, the title lifts into place (unless it arrived by
+   morph from the home row: html.mo-morphed), the caption last. The title is the page's largest text, so it
+   moves without fading: it is painted at full strength from the first frame (LCP). */
+html.mo .case .head .head-margin {
+  animation: mo-slide 800ms var(--mo-out) 100ms both;
+}
+html.mo .case .head .name {
+  animation: mo-fade-up 700ms var(--mo-out) both;
+}
+html.mo:not(.mo-morphed) .case .head h1 {
+  animation: mo-lift 900ms var(--mo-out) both;
+}
+@keyframes mo-lift {
+  from {
+    transform: translateY(0.35em);
+  }
+}
+html.mo .case .head figcaption {
+  animation: mo-fade-up 700ms var(--mo-out) 600ms both;
+}
+/* the wordmark (the header's and the title page's) prints again when pointed at */
+html.mo .tp-word:hover,
+html.mo .site-header .wordmark:hover {
+  mask: url('/textures/ink-v.png') repeat-x 0 0 / 256px 300%;
+  animation: mo-ink 650ms var(--mo-wipe) both;
+}
+@keyframes mo-ink {
+  from {
+    mask-position: 0 100%;
+  }
+  to {
+    mask-position: 0 0;
+  }
+}
+@keyframes mo-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.55em);
+  }
+}
+@keyframes mo-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+@keyframes mo-draw {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+@keyframes mo-pop {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.94);
+  }
+}
+@keyframes mo-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+}
+@keyframes mo-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* ---------- c. scroll: the hero text lifts and fades as it leaves. The sigil stays in its place and
+   scrolls like every other block (a parallax slid it over the details and contents). ---------- */
+@supports (animation-timeline: view()) {
+  html.mo .title-page {
+    view-timeline: --hero block;
+  }
+  html.mo .tp-text,
+  html.mo .tp-left {
+    animation: mo-hero-text linear both;
+    animation-timeline: --hero;
+    animation-range: exit 0% exit 100%;
+  }
+  html.mo .case .head {
+    view-timeline: --cover block;
+  }
+  html.mo .case .head-body {
+    animation: mo-hero-text linear both;
+    animation-timeline: --cover;
+    animation-range: exit 0% exit 100%;
+  }
+}
+@keyframes mo-hero-text {
+  to {
+    transform: translateY(-16vh);
+    opacity: 0;
+  }
+}
+
+/* ---------- d. arrivals ---------- */
+html.mo .mo-w {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+html.mo .mo-wi {
+  display: inline-block;
+  transform: translateY(112%);
+  transition: transform 950ms var(--mo-out) calc(var(--d, 0ms) + var(--i) * 45ms);
+}
+html.mo .mo-in .mo-wi,
+html.mo .mo-words.mo-in .mo-wi {
+  transform: none;
+}
+html.mo .mo-head {
+  --d: 120ms;
+}
+html.mo .mo-head > .margin {
+  opacity: 0;
+  transform: translateX(-18px);
+  transition:
+    opacity 600ms var(--mo-out),
+    transform 800ms var(--mo-out);
+}
+html.mo .mo-head.mo-in > .margin {
+  opacity: 1;
+  transform: none;
+}
+html.mo .mo-up {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 700ms var(--mo-out),
+    transform 1000ms var(--mo-out);
+}
+html.mo .mo-up.mo-in {
+  opacity: 1;
+  transform: none;
+}
+html.mo .mo-row {
+  opacity: 0;
+  transform: translateY(44px);
+  transition:
+    opacity 650ms var(--mo-out) calc(var(--i, 0) * 90ms),
+    transform 1000ms var(--mo-out) calc(var(--i, 0) * 90ms);
+}
+html.mo .mo-row.mo-in {
+  opacity: 1;
+  transform: none;
+}
+/* the thorn grows out of the spine when its row arrives (rows already on screen grow theirs at load:
+   TrackList's own thorn-grow) */
+@media (min-width: 861px) {
+  html.mo .tracks .track.mo-row::before {
+    animation: none !important;
+    transform-origin: 0 50%;
+    transform: scaleX(0);
+    transition: transform 800ms var(--mo-out) calc(var(--i, 0) * 90ms + 380ms);
+  }
+  html.mo .tracks .track.mo-row.mo-in::before {
+    transform: none;
+  }
+}
+/* the footer: the address rises letter by letter; on hover a ripple runs along it */
+html.mo .site-footer .mail .mo-ch {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.5em);
+  transition:
+    opacity 500ms var(--mo-out) calc(var(--i) * 16ms),
+    transform 700ms var(--mo-out) calc(var(--i) * 16ms),
+    color 200ms linear calc(var(--i) * 12ms);
+}
+html.mo .site-footer.mo-in .mail .mo-ch {
+  opacity: 1;
+  transform: none;
+}
+html.mo .site-footer.mo-in .mail a:is(:hover, :focus-visible) .mo-ch {
+  transform: translateY(-0.12em);
+  color: var(--accent);
+  transition:
+    transform 380ms var(--mo-spring) calc(var(--i) * 12ms),
+    color 200ms linear calc(var(--i) * 12ms);
+}
+
+/* ---------- e. the spine as a progress bar: a vermilion line down the spine's x, filled by how far the
+   page is scrolled (0 at the top, the full screen height at the bottom), with a diamond riding its end.
+   One line, because per-section fills read as broken pieces. Section nodes light as the diamond passes. */
+@media (min-width: 861px) {
+  html.mo .spine-bar,
+  html.mo .spine-head {
+    display: block;
+    position: fixed;
+    z-index: 30;
+    top: 0;
+    pointer-events: none;
+  }
+  html.mo .spine-bar {
+    width: 2px;
+    height: 100vh;
+    margin-left: -0.5px; /* 2 px centred on the 1 px rule, so it never blurs into it */
+    background: var(--accent);
+    transform-origin: 50% 0;
+    transform: scaleY(0);
+  }
+  html.mo .spine-head {
+    width: 0;
+    height: 0;
+  }
+  html.mo .spine-head::before {
+    content: '';
+    position: absolute;
+    left: calc(-0.35rem + 0.5px);
+    top: -0.35rem;
+    width: 0.7rem;
+    height: 0.7rem;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px rgb(255 59 33 / 0.16);
+    transform: rotate(45deg) scale(0);
+    transition: transform 400ms var(--mo-spring);
+  }
+  html.mo .spine-head.on::before {
+    transform: rotate(45deg) scale(1);
+  }
+  html.mo body.has-spine .spine-seg .section-head.mo-head > .margin::after {
+    transform: rotate(-135deg) scale(0);
+    transition:
+      transform 700ms var(--mo-spring) 250ms,
+      background-color 300ms linear;
+  }
+  html.mo body.has-spine .spine-seg .section-head.mo-head.mo-in > .margin::after {
+    transform: rotate(45deg);
+  }
+  html.mo body.has-spine .spine-seg :is(.section-head, .leaf).lit > .margin::after,
+  html.mo body.has-spine .site-footer .foot-grid.lit > .rubric::after,
+  html.mo body.has-spine .prose > h2.lit::after {
+    background: var(--accent);
+    transition: background-color 300ms linear;
+  }
+}
+.spine-bar,
+.spine-head {
+  display: none;
+}
+/* the case contents mark the section you are reading */
+html.mo .toc a {
+  position: relative;
+  transition: color 200ms linear;
+}
+html.mo .toc a::before {
+  content: '';
+  position: absolute;
+  left: -0.9rem;
+  top: 50%;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-top: -0.225rem;
+  background: var(--accent);
+  transform: rotate(45deg) scale(0);
+  transition: transform 350ms var(--mo-spring);
+}
+html.mo .toc a.is-current {
+  color: var(--ink);
+}
+html.mo .toc a.is-current::before {
+  transform: rotate(45deg) scale(1);
+}
+
+/* ---------- f. doors: they lean toward the pointer, fill with vermilion through a dithered front, press in ---------- */
+html.mo .door {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transform: translate(var(--mx, 0px), var(--my, 0px));
+  transition:
+    border-color 300ms linear,
+    color 160ms linear 130ms,
+    transform 350ms var(--mo-spring) !important;
+}
+html.mo .door:is(:hover, :focus-visible) {
+  background: transparent !important;
+}
+html.mo .door::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  background: var(--accent);
+  mask: url('/textures/edge-s.png') repeat-y -520px 0 / 1040px 32px;
+  transition: mask-position 520ms var(--mo-wipe);
+}
+html.mo .door:is(:hover, :focus-visible)::before {
+  mask-position: 0 0;
+}
+html.mo .door:active {
+  transform: translate(var(--mx, 0px), var(--my, 0px)) scale(0.95);
+}
+html.mo .door .label {
+  display: inline-block;
+  transform: translate(calc(var(--mx, 0px) * 0.4), calc(var(--my, 0px) * 0.4));
+  transition: transform 350ms var(--mo-spring);
+}
+html.mo .door .kick {
+  transition: color 160ms linear 130ms !important;
+}
+
+/* ---------- g. rows: bone paper wipes in through a dithered front; the text flips as it passes ---------- */
+html.mo .tracks .track {
+  isolation: isolate;
+}
+html.mo .tracks .track:is(:hover, :focus-within) {
+  background: transparent !important;
+}
+html.mo .tracks .track::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--ink);
+  mask: url('/textures/edge.png') repeat-y -2120px 0 / 4096px 32px;
+  transition: mask-position 560ms var(--mo-wipe);
+  pointer-events: none;
+}
+html.mo .tracks .track:is(:hover, :focus-within)::after {
+  mask-position: 0 0;
+  transition-duration: 560ms;
+}
+/* leaving is quicker than arriving, and the text turns back at once */
+html.mo .tracks .track::after {
+  transition-duration: 260ms;
+}
+html.mo .tracks .track :is(.headline, .headline a, .summary, .stack, .margin, .m, .pos, .arrow, .status, mark) {
+  transition:
+    color 90ms linear,
+    border-color 90ms linear,
+    transform 300ms var(--mo-out) !important;
+}
+html.mo .tracks .track:is(:hover, :focus-within) :is(.headline, .headline a, .summary, .stack, .margin, .m, .pos, .arrow, .status, mark) {
+  transition:
+    color 160ms linear 110ms,
+    border-color 160ms linear 110ms,
+    transform 300ms var(--mo-out) !important;
+}
+html.mo .tracks .track:is(:hover, :focus-within) .pos {
+  transform: translateX(6px);
+}
+
+/* ---------- h. links: an underline sweeps in from the left and out to the right ----------
+   Text links keep a resting underline (1 px, --line-strong), so they read as
+   links without a hover; the sweep runs over it. The header nav had no underline, and still has none.
+   The sweep is vermilion, like the text it runs under on hover. */
+html.mo .site-header nav a {
+  text-decoration: none !important;
+  background: linear-gradient(var(--accent), var(--accent)) no-repeat 100% 100% / 0% 1px;
+  transition:
+    background-size 420ms var(--mo-wipe),
+    color 200ms linear;
+}
+/* all four are 44 px tap targets (inline-flex, text centred): the line goes under the text, not the box */
+html.mo :is(.foot-links a, .tp-meta a, .tp-contact a, .track-nav .all) {
+  --ul-y: calc(50% + 0.78em);
+  text-decoration: none !important;
+  background:
+    linear-gradient(var(--accent), var(--accent)) no-repeat 100% var(--ul-y) / 0% 1px,
+    linear-gradient(var(--line-strong), var(--line-strong)) no-repeat 0 var(--ul-y) / 100% 1px;
+  transition:
+    background-size 420ms var(--mo-wipe),
+    color 200ms linear;
+}
+html.mo .site-header nav a:is(:hover, :focus-visible) {
+  background-size: 100% 1px;
+  background-position: 0 100%;
+}
+html.mo :is(.site-header nav a, .foot-links a, .tp-meta a, .tp-contact a, .track-nav .all):is(:hover, :focus-visible) {
+  color: var(--accent);
+}
+html.mo :is(.foot-links a, .tp-meta a, .tp-contact a, .track-nav .all):is(:hover, :focus-visible) {
+  background-size:
+    100% 1px,
+    100% 1px;
+  background-position:
+    0 var(--ul-y),
+    0 var(--ul-y);
+}
+html.mo :is(.prose, .colophon) a:not(.door) {
+  transition:
+    text-underline-offset 300ms var(--mo-out),
+    text-decoration-color 200ms linear;
+}
+html.mo :is(.prose, .colophon) a:not(.door):is(:hover, :focus-visible) {
+  text-underline-offset: 0.34em;
+  text-decoration-color: var(--accent);
+}
+
+/* ---------- i. stamps (StatusTag) land with a thunk when their row arrives; the case cover's big stamp
+   lands as the page opens ---------- */
+html.mo .track.mo-row .status,
+html.mo .details.mo-up .status {
+  opacity: 0;
+}
+html.mo .track.mo-row.mo-in .status,
+html.mo .details.mo-up.mo-in .status {
+  animation: mo-stamp 520ms var(--mo-spring) calc(var(--i, 0) * 90ms + 520ms) both;
+}
+html.mo .cover-stamp {
+  animation: mo-stamp-big 620ms var(--mo-spring) 900ms both;
+}
+@keyframes mo-stamp {
+  from {
+    opacity: 0;
+    transform: rotate(-16deg) scale(1.9);
+  }
+  55% {
+    opacity: 0.94;
+  }
+  to {
+    opacity: 0.94;
+    transform: rotate(-6deg) scale(1);
+  }
+}
+@keyframes mo-stamp-big {
+  from {
+    opacity: 0;
+    transform: rotate(-26deg) scale(2.2);
+  }
+  55% {
+    opacity: 0.92;
+  }
+  to {
+    opacity: 0.92;
+    transform: rotate(-12deg) scale(1);
+  }
+}
+
+/* ---------- l. the mark (Mark.astro): no plain drawing before the metal. While html.gl-pending is on the
+   WebGL mark is coming, so the drawing stays hidden and the mark appears only as the pour; without WebGL
+   hero-gl.ts removes the class and the drawing fades in as the fallback ---------- */
+html.gl-pending svg[data-gl] {
+  visibility: hidden;
+}
+html.mo:not(.gl-pending) svg.is-mark:not(.sigil-gl-on) {
+  animation: mo-fallback-in 600ms linear both;
+}
+@keyframes mo-fallback-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------- j. the band under the hero (Home): a strip of grey dither dots, dense at the top and dissolving
+   down. Printed (public/textures/band.png, drifting slowly) until src/scripts/band.ts makes it live: a slow
+   liquid field the pointer stirs and a scroll carries along. It sits in the gap above Side A: margin-bottom
+   pulls the next section back, so the layout never moves. ---------- */
+.dband {
+  height: 150px;
+  margin-bottom: -150px;
+  pointer-events: none;
+  background: url('/textures/band.png') repeat-x 0 0 / auto 150px;
+  opacity: 0.85;
+  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+html.mo .dband {
+  animation: band-drift 120s linear infinite;
+}
+@keyframes band-drift {
+  to {
+    background-position-x: -1091px;
+  }
+}
+
+/* ---------- k. pointer dust (src/scripts/dust.ts): the band's dots everywhere on the page, seen only around
+   the pointer while it moves; a small canvas behind the content ---------- */
+.dust {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: -1; /* under every block; above the page colour and the grain */
+  width: 304px;
+  height: 304px;
+  pointer-events: none;
+  image-rendering: pixelated;
+  opacity: 0;
+}
+html:not(.mo) .dust {
+  display: none;
+}
+
+/* the live band: the canvas replaces the printed one */
+.dband.is-live {
+  background: none;
+  animation: none;
+}
+.dband-gl {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
